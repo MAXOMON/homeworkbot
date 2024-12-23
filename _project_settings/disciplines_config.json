@@ -1,0 +1,63 @@
+{
+  "disciplines": [
+    {
+      "full_name": "Технологии и методы программирования",
+      "short_name": "ТМП",
+      "path_to_test": "_disciplines\\tmp\\test",
+      "path_to_answer": "_disciplines\\tmp\\answer",
+      "language": "python",
+      "works": [
+        {
+          "number": 1,
+          "amount_tasks": 11,
+          "deadline": "2022-02-01"
+        },
+        {
+          "number": 2,
+          "amount_tasks": 20,
+          "deadline": "2022-02-01"
+        },
+        {
+          "number": 3,
+          "amount_tasks": 19,
+          "deadline": "2022-02-01"
+        },
+        {
+          "number": 4,
+          "amount_tasks": 18,
+          "deadline": "2022-02-01"
+        },
+        {
+          "number": 5,
+          "amount_tasks": 16,
+          "deadline": "2022-02-01"
+        },
+        {
+          "number": 6,
+          "amount_tasks": 15,
+          "deadline": "2022-02-01"
+        },
+        {
+          "number": 7,
+          "amount_tasks": 20,
+          "deadline": "2022-02-01"
+        },
+        {
+          "number": 8,
+          "amount_tasks": 18,
+          "deadline": "2022-02-01"
+        },
+        {
+          "number": 9,
+          "amount_tasks": 22,
+          "deadline": "2022-02-01"
+        },
+        {
+          "number": 10,
+          "amount_tasks": 10,
+          "deadline": "2022-02-01"
+        }
+      ]
+    }
+  ]
+}
