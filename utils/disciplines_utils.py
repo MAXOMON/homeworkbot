@@ -1,6 +1,6 @@
 import json
 
-from pydantic_core import to_jsonable_python
+from pydantic.json import pydantic_encoder
 
 from model.pydantic.discipline_works import DisciplinesConfig, DisciplineWorksConfig
 
@@ -18,7 +18,7 @@ def disciplines_config_to_json(data: DisciplinesConfig) -> str:
         indent=4,
         ensure_ascii=False,
         separators=(",", ":"),
-        default=to_jsonable_python
+        default=pydantic_encoder
     )
 
 def disciplines_config_from_json(json_data: str) -> DisciplinesConfig:
@@ -32,7 +32,7 @@ def disciplines_works_to_json(data: DisciplineWorksConfig) -> str:
         indent=4,
         ensure_ascii=False,
         separators=(",", ":"),
-        default=to_jsonable_python
+        default=pydantic_encoder
     )
 
 def load_discipline(downloaded_data: bytes) -> DisciplineWorksConfig:

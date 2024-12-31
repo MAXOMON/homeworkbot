@@ -1,6 +1,6 @@
 import json
 
-from pydantic_core import to_jsonable_python
+from pydantic.json import pydantic_encoder
 
 from model.pydantic.discipline_works import DisciplineWorksConfig
 from model.pydantic.home_work import DisciplineHomeWorks, HomeWork, HomeTask
@@ -32,5 +32,5 @@ def homeworks_to_json(data: DisciplineHomeWorks) -> str:
         indent=4,
         ensure_ascii=False,
         separators=(",", ":"),
-        default=to_jsonable_python
+        default=pydantic_encoder
     )

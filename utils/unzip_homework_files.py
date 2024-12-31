@@ -21,7 +21,7 @@ async def save_homework_file(
     :param path_to_answer: корневая директория загрузки ответов,
       по выбранной студентом дисциплине
 
-    :raturn: список путей до распакованных файлов ответов
+    :return: список путей до распакованных файлов ответов
     """
     student = get_student_by_tg_id(user_tg_id)
     group = get_group(student.group)

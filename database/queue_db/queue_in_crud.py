@@ -1,8 +1,7 @@
 import json
-import pydantic
 from pydantic.json import pydantic_encoder
 
-
+from sqlalchemy import delete
 from model.pydantic.queue_in_raw import QueueInRaw
 
 from database.queue_db.database import Session
@@ -48,6 +47,6 @@ def get_first_record() -> QueueIn:
         record = session.query(QueueIn).first()
         session.query(QueueIn).filter(
             QueueIn.id == record.id
-        ).delete(synchronize_sesion='fetch')
+        ).delete(synchronize_session='fetch')
         session.commit()
         return record

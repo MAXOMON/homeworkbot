@@ -9,7 +9,7 @@ from sqlalchemy.orm import sessionmaker
 
 load_dotenv()
 
-engine = create_engine(f"sqlite:///{os.getenv("QUEUE_DB_NAME")}.sqlite")
+engine = create_engine(f"sqlite:///{os.getenv('QUEUE_DB_NAME')}.sqlite")
 Session = sessionmaker(bind=engine)
 
 Base = declarative_base()

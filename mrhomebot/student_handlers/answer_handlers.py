@@ -4,11 +4,10 @@ from database.main_db import common_crud
 from database.queue_db import queue_in_crud
 from model.pydantic.queue_in_raw import QueueInRaw
 
-
 from telebot.types import CallbackQuery, Message, InlineKeyboardButton, InlineKeyboardMarkup
 from utils.check_exist_test_folder import is_test_folder_exist
 from utils.unzip_homework_files import save_homework_file
-from mrhomebot import bot
+from mrhomebot.configuration import bot
 
 
 class StudentStates(StatesGroup):
@@ -64,7 +63,7 @@ async def handle_upload_answer(call: CallbackQuery):
                 data["discipline_id"] = int(call.data.split("_")[2])
         case _:
             await bot.edit_message_text(
-                "Неизвестный формат для обработка данных",
+                "Неизвестный формат для обработки данных",
                 call.message.chat.id,
                 call.message.id
             )
@@ -89,9 +88,9 @@ async def handle_student_docs(message: Message):
     if file_name[-4:] == ".zip":
         if message.document.file_size > 10000:
             await bot.edit_message_text(
-                "<i>Архив превысил разрешённый к загрузке размер!!!</i>",
-                message.chat.id,
-                message.id,
+                text="<i>Архив превысил разрешённый к загрузке размер!!!</i>",
+                chat_id=message.chat.id,
+                message_id=result_message.id,
                 parse_mode='HTML'
             )
             await bot.delete_state(message.from_user.id, message.chat.id)
@@ -102,7 +101,7 @@ async def handle_student_docs(message: Message):
         filelist = await save_homework_file(
             file_name,
             downloaded_file,
-            message.forum_user.id,
+            message.from_user.id,
             lab_num,
             discipline.path_to_answer
         )
@@ -111,9 +110,9 @@ async def handle_student_docs(message: Message):
             message.from_user.id,
             message.chat.id,
             QueueInRaw(
-                discipline_id,
-                lab_num,
-                filelist
+                discipline_id=discipline_id,
+                lab_number=lab_num,
+                files_path=filelist
             )
         )
         
@@ -123,9 +122,9 @@ async def handle_student_docs(message: Message):
         await bot.reply_to(message, "Неверный тип файла")
     
     await bot.edit_message_text(
-        "<i>Файл загружен</i>",
-        message.chat.id,
-        result_message.id,
+        text="<i>Файл загружен</i>",
+        chat_id=message.chat.id,
+        message_id=result_message.id,
         parse_mode="HTML"
     )
     await bot.delete_state(message.from_user.id, message.chat.id)

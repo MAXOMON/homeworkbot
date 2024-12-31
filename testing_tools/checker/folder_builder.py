@@ -4,7 +4,7 @@ import shutil
 from datetime import datetime
 from pathlib import Path
 
-from pydantic_core import to_jsonable_python
+from pydantic.json import pydantic_encoder
 
 from model.pydantic.queue_in_raw import QueueInRaw
 from model.queue_db.queue_in import QueueIn
@@ -62,7 +62,9 @@ class FolderBuilder:
         self.docker_folder = self.temp_path.joinpath(
             discipline.short_name
         ).joinpath(
-            f'{self.student_id}_{current_time:%Y-%m-%d_%H-%M-%S%z}'
+            str(self.answer.lab_number)
+        ).joinpath(
+            f'{self.student_id}_{current_time:%Y-%m-%d_%H-%M-%S}'
         )
         Path(self.docker_folder).mkdir(parents=True, exist_ok=True)
 
@@ -73,10 +75,13 @@ class FolderBuilder:
         for test_file in temp_test_files:
             shutil.copy(test_file, self.docker_folder)
 
+
+        formatted_current_time = current_time.replace(microsecond=0)
+
         log_init_data = TestLogInit(
             student_id=self.student_id,
             lab_id=self.answer.lab_number,
-            run_time=current_time
+            run_time=formatted_current_time
         )
 
         with open(
@@ -86,10 +91,10 @@ class FolderBuilder:
                 log_init_data,
                 file,
                 sort_keys=False,
-                indent=4,
+                indent=0,
                 ensure_ascii=False,
-                separators=(',', ': '),
-                default=to_jsonable_python
+                separators=(',', ':'),
+                default=pydantic_encoder
             )
 
         self.is_test_available = len(self.rejected_files) <= len(answers)

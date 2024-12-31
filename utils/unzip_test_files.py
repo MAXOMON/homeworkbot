@@ -10,8 +10,6 @@ async def save_test_files(path_to_test: str, downloaded_file: bytes) -> None:
 
         :param path_to_test: корневая директория загрузки тестов по выбранной студентом дисциплине
         :param downloaded_file: сырое представление архива (набор байт)
-
-        :return: None
     """
     path = Path.cwd()
     path = Path(path.joinpath(path_to_test))

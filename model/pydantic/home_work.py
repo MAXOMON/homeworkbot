@@ -15,6 +15,7 @@ class HomeWork(BaseModel):
     deadline: date
     tasks: list[HomeTask]
     is_done: bool = False
+    tasks_completed: int = 0
     end_time: datetime | None = None
 
 
