@@ -56,7 +56,7 @@ async def handle_commands(message: Message):
     command = get_current_student_command(message.text)
     match command:
         case StudentCommand.UPLOAD_ANSWER:
-            await create_student_disciplines_button(message, "uploadAnswer")
+            await create_student_disciplines_button(message, "uploadAnswer_0")
         case StudentCommand.NEAREST_DEADLINE:
             await create_student_disciplines_button(message, "nearestDeadline")
         case StudentCommand.ACADEMIC_PERFORMANCE:

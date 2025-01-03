@@ -212,7 +212,6 @@ def write_test_result(lab_report: LabReport, input_record: QueueIn) -> None:
     :param lab_report: отчет по результатам тестирования заданий работы
     :param input_record: исходные данные, отправляемые на тестирование
     """
-    print("Вошли в common_crud_write_test_result")
     session = Session()
     task_raw = QueueInRaw(**json.loads(input_record.data))
 

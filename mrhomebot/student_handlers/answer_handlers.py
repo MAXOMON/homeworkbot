@@ -14,6 +14,9 @@ class StudentStates(StatesGroup):
     upload_answer = State()
 
 
+PAGINATOR = 5
+
+
 @bot.callback_query_handler(
         func=lambda call: "uploadAnswer_" in call.data or "labNumber_" in call.data
         )
@@ -21,16 +24,45 @@ async def handle_upload_answer(call: CallbackQuery):
     type_callback = call.data.split("_")[0]
     match type_callback:
         case "uploadAnswer":
-            discipline_id = int(call.data.split("_")[1])
+            paginator = int(call.data.split("_")[1])
+            discipline_id = int(call.data.split("_")[2])
             discipline = common_crud.get_discipline(discipline_id)
             markup = InlineKeyboardMarkup()
             markup.row_width = 1
+            lab_list = [f"Лаб. раб. № {it}" for it in range(1, discipline.max_home_works + 1)]
             markup.add(
                 *[InlineKeyboardButton(
-                    f"Лаб. раб. № {it}",
-                    callback_data=f"labNumber_{it}_{discipline_id}"
-                ) for it in range(1, discipline.max_home_works + 1)]
+                    it,
+                    callback_data=f"labNumber_{it.split()[-1]}_{discipline_id}"
+                ) for it in lab_list[PAGINATOR * paginator:PAGINATOR * (paginator + 1)]]
             )
+            if paginator == 0:
+                markup.add(
+                    InlineKeyboardButton(
+                        "➡",
+                        callback_data=f"uploadAnswer_{paginator + 1}_{discipline_id}"
+                    )
+                )
+            elif len(lab_list) > PAGINATOR * (paginator + 1):
+                markup.add(
+                    InlineKeyboardButton(
+                        "⬅",
+                        callback_data=f"uploadAnswer_{paginator - 1}_{discipline_id}"
+                    ),
+                    InlineKeyboardButton(
+                        "➡",
+                        callback_data=f"uploadAnswer_{paginator + 1}_{discipline_id}"
+                    ),
+                    row_width=2
+                )
+            else:
+                markup.add(
+                    InlineKeyboardButton(
+                        "⬅",
+                        callback_data=f"uploadAnswer_{paginator - 1}_{discipline_id}"
+                    )
+                )
+
             await bot.edit_message_text(
                 "Выберите номер лабораторной работы",
                 call.message.chat.id,
