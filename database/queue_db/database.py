@@ -1,10 +1,8 @@
 import os
 
-
 from dotenv import load_dotenv
 from sqlalchemy import create_engine
-from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import sessionmaker
+from sqlalchemy.orm import sessionmaker, DeclarativeBase
 
 
 load_dotenv()
@@ -12,8 +10,9 @@ load_dotenv()
 engine = create_engine(f"sqlite:///{os.getenv('QUEUE_DB_NAME')}.sqlite")
 Session = sessionmaker(bind=engine)
 
-Base = declarative_base()
+class Base(DeclarativeBase):
+    pass
 
 
-def create_db() -> None:
+def create_tables() -> None:
     Base.metadata.create_all(engine)

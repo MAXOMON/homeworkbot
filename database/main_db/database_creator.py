@@ -11,11 +11,11 @@ from model.main_db.student_ban import StudentBan
 from model.main_db.teacher_discipline import TeacherDiscipline
 from model.main_db.teacher_group import TeacherGroup
 
-from database.main_db.database import create_db, Session
+from database.main_db.database import create_tables, Session
 
 
-def create_main_db(settings: DbCreatorSettings) -> None:
-    create_db()
+def create_main_tables(settings: DbCreatorSettings) -> None:
+    create_tables()
 
     if not settings.remote_configuration:
         fill_db_from_files(
