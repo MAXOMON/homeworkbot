@@ -12,18 +12,15 @@ def is_empty() -> bool:
         data = session.query(QueueOut).first()
         return data is None
 
-
 def is_not_empty() -> bool:
     with Session() as session:
         data = session.query(QueueOut).first()
         return data is not None
 
-
 def get_all_records() -> list[QueueOut]:
     with Session() as session:
         data = session.query(QueueOut).all()
         return data
-
 
 def delete_record(record_id: int) -> None:
     with Session() as session:
@@ -31,7 +28,6 @@ def delete_record(record_id: int) -> None:
             QueueOut.id == record_id
         ).delete(synchronize_session="fetch")
         session.commit()
-
 
 def add_record(user_tg_id: int, chat_id: int, data: TestResult) -> None:
     session = Session()

@@ -2,7 +2,7 @@ from database.main_db.database import Session
 
 from model.main_db.student import Student
 from model.main_db.discipline import Discipline
-from model.main_db.assigned_discipline import AssignedDiscipline
+#from model.main_db.assigned_discipline import AssignedDiscipline
 
 
 def has_student(full_name: str) -> bool:
@@ -12,14 +12,12 @@ def has_student(full_name: str) -> bool:
         ).first()
         return student is not None
 
-
 def is_student(telegram_id: int) -> bool:
     with Session() as session:
         student = session.query(Student).filter(
             Student.telegram_id == telegram_id
         ).first()
         return student is not None
-
 
 def set_telegram_id(full_name: str, telegram_id: int) -> None:
     with Session() as session:
@@ -29,7 +27,6 @@ def set_telegram_id(full_name: str, telegram_id: int) -> None:
             {Student.telegram_id: telegram_id}, synchronize_session="fetch"
         )
         session.commit()
-
 
 def get_student_by_tg_id(telegram_id: int) -> Student:
     """
@@ -43,9 +40,7 @@ def get_student_by_tg_id(telegram_id: int) -> Student:
         student = session.query(Student).filter(
             Student.telegram_id == telegram_id
         ).first()
-        
         return student
-    
 
 def get_assign_disciplines(student_tg_id: int) -> list[Discipline]:
     """
@@ -56,12 +51,7 @@ def get_assign_disciplines(student_tg_id: int) -> list[Discipline]:
     :return: список оъектов класса Discipline
     """
     with Session() as session:
-        disciplines = session.query(Discipline).join(
-            AssignedDiscipline,
-            AssignedDiscipline.discipline_id == Discipline.id
-        ).join(
-            Student,
-            Student.id == AssignedDiscipline.student_id
-        ).filter(Student.telegram_id == student_tg_id).all()
-
-        return disciplines
+        student = session.query(Student).filter(
+            Student.telegram_id == student_tg_id
+        ).first()
+        return student.group.disciplines

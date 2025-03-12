@@ -9,8 +9,6 @@ from mrhomebot.filters import IsAdmin, IsStudent, IsTeacher
 from mrhomebot.filters import AddStudentCallbackFilter
 
 from mrhomebot.middlewares import BanMiddleware, StudentFloodMiddleware
-from setuptools._distutils.util import strtobool
-
 
 
 load_dotenv()
@@ -25,7 +23,7 @@ bot.add_custom_filter(AddStudentCallbackFilter())
 
 bot.setup_middleware(BanMiddleware(bot))
 
-if bool(strtobool(os.getenv("FLOOD_MIDDLEWARE"))):
+if bool(os.getenv("FLOOD_MIDDLEWARE")):
     bot.setup_middleware((
         StudentFloodMiddleware(
             bot,
@@ -33,4 +31,3 @@ if bool(strtobool(os.getenv("FLOOD_MIDDLEWARE"))):
             int(os.getenv("STUDENT_COMMAND_LIMIT"))
         )
     ))
-

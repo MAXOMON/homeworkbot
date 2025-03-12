@@ -134,13 +134,11 @@ def third_admin_keyboard(message: Message | None = None) -> ReplyKeyboardMarkup:
     )
     return markup
 
-
 def is_admin_command(command: str) -> bool:
-    for key, value in __admin_commands.items():
+    for _, value in __admin_commands.items():
         if value == command:
             return True
     return False
-
 
 def get_current_admin_command(command: str) -> AdminCommand:
     for key, value in __admin_commands.items():
@@ -148,14 +146,12 @@ def get_current_admin_command(command: str) -> AdminCommand:
             return key
     raise AdminException("Неизвестная команда")
 
-
 __menu_index: dict[int, int] = {}
 __menu_list = [
     first_admin_keyboard,
     second_admin_keyboard,
     third_admin_keyboard
 ]
-
 
 async def switch_admin_to_teacher_menu(message: Message):
     await bot.send_message(
@@ -165,7 +161,6 @@ async def switch_admin_to_teacher_menu(message: Message):
         disable_web_page_preview=True,
         reply_markup=create_teacher_keyboard(message)
     )
-
 
 @bot.message_handler(is_admin=True, func=lambda message: is_admin_command(message.text))
 async def handle_commands(message: Message):

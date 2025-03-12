@@ -72,7 +72,6 @@ async def callback_download_answers(call: CallbackQuery):
                 call.message.id
             )
 
-
 async def _download_answer(call: CallbackQuery, path_to_group_folder: Path):
     await bot.edit_message_text(
         "Начинаем формировать отчёт",

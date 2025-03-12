@@ -22,7 +22,6 @@ async def callback_nearest_deadline(call: CallbackQuery):
                 call.message.id
             )
 
-
 async def __create_report(
         call: CallbackQuery,
         student_id: int,

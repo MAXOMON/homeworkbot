@@ -1,3 +1,4 @@
+"""Базовый модуль для создания таблиц"""
 import os
 
 from dotenv import load_dotenv

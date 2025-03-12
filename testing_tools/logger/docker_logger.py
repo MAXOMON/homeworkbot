@@ -2,7 +2,6 @@
 """
 Модуль копируется в директорию из которой будет запускаться контейнер
 """
-
 import json
 import os
 from threading import Lock
@@ -124,10 +123,10 @@ class DockerLogger(metaclass=_SingletonBaseClass):
         :return: результат тестирования в json-формате
         """
         return json.dumps(
-                    self.lab_report,
-                    sort_keys=False,
-                    indent=4,
-                    ensure_ascii=False,
-                    separators=(',', ': '),
-                    default=pydantic_encoder
-                )
+                self.lab_report,
+                sort_keys=False,
+                indent=4,
+                ensure_ascii=False,
+                separators=(',', ': '),
+                default=pydantic_encoder
+            )

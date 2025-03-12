@@ -1,9 +1,7 @@
 """
-    Модуль обработки команды администратора на скачивание
-    ответов по дисциплине конкретной группы
+Модуль обработки команды администратора на скачивание
+ответов по дисциплине конкретной группы
 """
-
-
 import asyncio
 from pathlib import Path
 
@@ -19,24 +17,20 @@ from reports.create_answers_archive import create_answers_archive
 async def handle_download_answers(message: Message):
     await create_discipline_button(message, 'dowAnswersDis')
 
-
 @bot.message_handler(is_admin=False, commands=['granswer'])
 async def handle_no_download_answers(message: Message):
     await bot.send_message(message.chat.id, 'Нет прав доступа!!!')
-
 
 __answer_prefix = [
     'dowAnswersDis_',
     'dowAnswersGr_'
 ]
 
-
 def __is_answer_prefix_callback(data: str) -> bool:
     for it in __answer_prefix:
         if it in data:
             return True
     return False
-
 
 @bot.callback_query_handler(
     func=lambda call: __is_answer_prefix_callback(call.data)
@@ -83,7 +77,6 @@ async def callback_download_answers(call: CallbackQuery):
                 call.message.chat.id,
                 call.message.id
             )
-
 
 async def _download_answer(call: CallbackQuery, path_to_group_folder: Path):
     await bot.edit_message_text(

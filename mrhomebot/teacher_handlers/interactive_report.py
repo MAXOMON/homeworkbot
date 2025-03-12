@@ -60,7 +60,6 @@ async def callback_interactive_report(call: CallbackQuery):
                     call.message.id,
                     reply_markup=markup
                 )
-
         case 'interactiveDisRep':
             group_id = int(call.data.split("_")[1])
             discipline_id = int(call.data.split("_")[2])
@@ -85,19 +84,16 @@ async def callback_interactive_report(call: CallbackQuery):
                 call.message.id,
                 reply_markup=markup
             )
-        
         case 'interactiveStRep':
             student_id = int(call.data.split("_")[1])
             discipline_id = int(call.data.split("_")[2])
             await __create_report(call, student_id, discipline_id)
-
         case _:
             await bot.edit_message_text(
                 "Неизвестный формат для обработки данных",
                 call.message.chat.id,
                 call.message.id
             )
-
 
 async def __create_report(
         call: CallbackQuery,

@@ -18,8 +18,8 @@ PAGINATOR = 5
 
 
 @bot.callback_query_handler(
-        func=lambda call: "uploadAnswer_" in call.data or "labNumber_" in call.data
-        )
+    func=lambda call: ("uploadAnswer_" in call.data) or ("labNumber_" in call.data)
+)
 async def handle_upload_answer(call: CallbackQuery):
     type_callback = call.data.split("_")[0]
     match type_callback:
@@ -100,8 +100,7 @@ async def handle_upload_answer(call: CallbackQuery):
                 call.message.id
             )
 
-
-@bot.message_handler(state=StudentStates.upload_answer, content_types=['document'])
+@bot.message_handler(content_types=['document'], state=StudentStates.upload_answer)
 async def handle_student_docs(message: Message):
     result_message = await bot.send_message(
         message.chat.id,
@@ -113,7 +112,7 @@ async def handle_student_docs(message: Message):
     async with bot.retrieve_data(message.from_user.id, message.chat.id) as data:
         lab_num = data["labNumber"]
         discipline_id = data["discipline_id"]
-    
+
     discipline = common_crud.get_discipline(discipline_id)
 
     file_name = message.document.file_name
@@ -129,7 +128,7 @@ async def handle_student_docs(message: Message):
             return
         file_info = await bot.get_file(message.document.file_id)
         downloaded_file = await bot.download_file(file_info.file_path)
-        
+
         filelist = await save_homework_file(
             file_name,
             downloaded_file,
@@ -147,12 +146,12 @@ async def handle_student_docs(message: Message):
                 files_path=filelist
             )
         )
-        
+
         await bot.send_message(message.chat.id, "Задания отправлены на проверку")
 
     else:
         await bot.reply_to(message, "Неверный тип файла")
-    
+
     await bot.edit_message_text(
         text="<i>Файл загружен</i>",
         chat_id=message.chat.id,

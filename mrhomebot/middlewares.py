@@ -20,10 +20,11 @@ class BanMiddleware(BaseMiddleware):
         if common_crud.is_ban(message.from_user.id):
             await self.bot.send_message(
                 message.chat.id,
-                f"Функциональность бота недоступна для забаненных пользователей" \
-                f"Для разблокировки обратитесь к своему преподавателю"
+                "Функциональность бота недоступна для забаненных пользователей\n" +
+                "Для разблокировки обратитесь к своему преподавателю"
             )
-            return CancelUpdate
+            return CancelUpdate()
+
 
     async def post_process(self, message, data, exception):
         ...
@@ -56,20 +57,19 @@ class StudentFloodMiddleware(BaseMiddleware):
         self.update_types = ['message']
 
     async def pre_process(self, message: Message, data):
-        print(message.date)
         if student_crud.is_student(message.from_user.id):
             if message.text in ["Загрузить ответ", "Ближайший дедлайн", "Успеваемость"]:
-                if (message.from_user.id not in self.last_answer_time and
+                if (not message.from_user.id in self.last_answer_time and
                      message.text == "Загрузить ответ"):
                     self.state[message.from_user.id] = FloodMiddlewareState.WAIT_UPLOAD_ANSWER
                     self.last_answer_time[message.from_user.id] = message.date
                     return
-                
-                if (message.from_user.id not in self.last_command_time and
+
+                if (not message.from_user.id in self.last_command_time and
                         message.text in ["Ближайший дедлайн", "Успеваемость"]):
                     self.last_command_time[message.from_user.id] = message.date
                     return
-                
+
                 is_flood = False
                 last_time = 0
                 match message.text:
@@ -79,10 +79,23 @@ class StudentFloodMiddleware(BaseMiddleware):
                             last_time = self.load_answers_limit
                             last_time -= message.date - self.last_command_time[message.from_user.id]
                             is_flood = True
+                        else:
+                            self.state[message.from_user.id] = FloodMiddlewareState.WAIT_UPLOAD_ANSWER
                         self.last_command_time[message.from_user.id] = message.date
                     case _:
-                        ...
-
+                        if (message.date - self.last_command_time[message.from_user.id] < self.commands_limit):
+                            last_time = self.commands_limit
+                            last_time -= message.date - self.last_command_time[message.from_user.id]
+                            is_flood = True
+                        self.last_command_time[message.from_user.id] = message.date
+                if is_flood:
+                    await self.bot.send_message(
+                        message.chat.id,
+                        "Лимит до следующего обращения к боту еще не истек!!!" +
+                        f"Обратитесь к боту через {last_time // 60} минут..."
+                    )
+                    return CancelUpdate()
+                
             elif message.text == "/start":
                 return
             else:
@@ -93,7 +106,5 @@ class StudentFloodMiddleware(BaseMiddleware):
                     return CancelUpdate()
 
 
-    async def post_process(self):
+    async def post_process(self, message, data, exception):
         ...
-
-

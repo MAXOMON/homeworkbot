@@ -33,7 +33,7 @@ def run_report_builder(
             report_builder = FullReportBuilder(group_id, discipline_id)
         case ReportBuilderTypeEnum.SHORT:
             report_builder = ShortReportBuilder(group_id, discipline_id)
-        
+
     report_builder.build_report()
     report_builder.save_report()
     return report_builder.get_path_to_report()

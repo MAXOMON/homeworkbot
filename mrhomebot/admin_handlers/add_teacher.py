@@ -37,9 +37,6 @@ async def _handle_add_teacher(message: Message):
 
 @bot.message_handler(state=AdminStates.teacher_name)
 async def teacher_name_correct(message: Message):
-    if message.text == "stop":
-        await bot.delete_state(message.from_user.id, message.chat.id)
-        return
 
     if len(message.text.split(" ")) == 3:
         await bot.set_state(
@@ -53,7 +50,7 @@ async def teacher_name_correct(message: Message):
         )
         async with bot.retrieve_data(
             message.from_user.id,
-            message.chat.id 
+            message.chat.id
         ) as data:
             data["teacher_name"] = message.text
     else:

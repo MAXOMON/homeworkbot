@@ -123,7 +123,7 @@ async def create_discipline_button(message: Message, callback_prefix: str):
     disciplines = admin_crud.get_all_disciplines()
     if len(disciplines) < 1:
         await bot.send_message(
-            message.chat.id, 
+            message.chat.id,
             "В БД отсутствуют дисциплины!"
         )
         return

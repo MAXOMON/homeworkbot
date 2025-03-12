@@ -32,8 +32,9 @@ __reports_builder_type = {
 
 
 def __is_download_prefix_callback(data: str) -> bool:
-    if data in __report_prefix:
-        return True
+    for it in __report_prefix:
+        if it in data:
+            return True
     return False
 
 
@@ -51,8 +52,10 @@ async def callback_download_full_report(call: CallbackQuery):
             if admin_crud.is_admin_no_teacher_mode(call.from_user.id):
                 disciplines = common_crud.get_group_disciplines(group_id)
             else:
-                disciplines = teacher_crud.get_assign_group_discipline(call.from_user.id, group_id)
-            
+                disciplines = teacher_crud.get_assign_group_discipline(
+                    call.from_user.id,
+                    group_id
+                    )
             if len(disciplines) == 0:
                 await bot.edit_message_text(
                     "За группой не числится дисциплин",
@@ -86,14 +89,18 @@ async def callback_download_full_report(call: CallbackQuery):
         case 'fullGrReport' | 'finishGrReport' | 'shortGrReport':
             group_id = int(call.data.split("_")[1])
             discipline_id = int(call.data.split("_")[2])
-            await __create_report(call, group_id, discipline_id, __reports_builder_type[type_callback])
+            await __create_report(
+                call,
+                group_id,
+                discipline_id,
+                __reports_builder_type[type_callback]
+                )
         case _:
             await bot.edit_message_text(
-                f"Ошибка admin_report_callback{call.data=}",
+                f"Неизвестный формат для обработки данных",
                 call.message.chat.id,
                 call.message.id
             )
-
 
 async def __create_report(
         call: CallbackQuery,
@@ -107,25 +114,20 @@ async def __create_report(
     :param group_id: id группы по которой формируется отчёт
     :param discipline_id: id дисциплины по которой формируется отчёт
     :param builder_type: тип формируемого отчёта
-
-    :return: None
     """
     await bot.edit_message_text(
         "Начинаем формировать отчёт",
         call.message.chat.id,
         call.message.id
     )
-
     path_to_report = await asyncio.gather(
         asyncio.to_thread(run_report_builder, group_id, discipline_id, builder_type)
     )
-
     await bot.edit_message_text(
         "Отчёт успешно сформирован",
         call.message.chat.id,
         call.message.id
     )
-
     await bot.send_document(
         call.message.chat.id,
         InputFile(pathlib.Path(path_to_report[0]))

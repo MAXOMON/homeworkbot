@@ -12,7 +12,9 @@ class Student(Base):
 
     id: Mapped[int] = mapped_column(primary_key=True)
     full_name: Mapped[str] = mapped_column(String(120), nullable=False)
-    group_id: Mapped[int] = mapped_column(ForeignKey('groups.id', ondelete="CASCADE"), nullable=False)
+    group_id: Mapped[int] = mapped_column(
+        ForeignKey('groups.id', ondelete="CASCADE"), nullable=False
+        )
     telegram_id: Mapped[int] = mapped_column(nullable=True, unique=True)
 
     group: Mapped["Group"] = relationship(

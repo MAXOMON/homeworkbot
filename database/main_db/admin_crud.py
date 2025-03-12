@@ -1,4 +1,6 @@
 import os
+
+from sqlalchemy import delete, select
 from database.main_db.database import Session
 from database.main_db.teacher_crud import is_teacher
 from database.main_db.crud_exceptions import DisciplineNotFoundException, GroupAlreadyExistException, \
@@ -10,7 +12,6 @@ from model.main_db.admin import Admin
 from model.main_db.chat import Chat
 from model.main_db.teacher import Teacher
 from model.main_db.group import Group
-from model.main_db.teacher_group import TeacherGroup
 from model.main_db.assigned_discipline import AssignedDiscipline
 from model.main_db.discipline import Discipline
 from model.main_db.student import Student
@@ -18,7 +19,6 @@ from utils.disciplines_utils import disciplines_works_from_json, disciplines_wor
 from utils.homeworks_utils import create_homeworks, homeworks_to_json
 from model.pydantic.discipline_works import DisciplineWorksConfig
 from model.pydantic.students_group import StudentsGroup
-from model.main_db.teacher_discipline import TeacherDiscipline
 from model.pydantic.db_start_data import DbStartData
 
 
@@ -32,7 +32,8 @@ def is_admin_no_teacher_mode(telegram_id: int) -> bool:
     :return: True, если администратор не имеет привилегии преподавателя
     """
     with Session() as session:
-        admin = session.query(Admin).get(telegram_id)
+        admin = session.get(Admin, telegram_id)
+        #admin = session.query(Admin).get(telegram_id)
         if admin is None:
             return False
         return not admin.teacher_mode
@@ -48,7 +49,8 @@ def is_admin_with_teacher_mode(telegram_id: int) -> bool:
     :return: True, если администратор имеет привилегии преподавателя
     """
     with Session() as session:
-        admin = session.query(Admin).get(telegram_id)
+        admin = session.get(Admin, telegram_id)
+        #admin = session.query(Admin).get(telegram_id)
         if admin is None:
             return False
         return admin.teacher_mode
@@ -63,7 +65,8 @@ def is_admin(telegram_id: int) -> bool:
     :return: True, если пользователь является администратором
     """
     with Session() as session:
-        admin = session.query(Admin).get(telegram_id)
+        admin = session.get(Admin, telegram_id)
+        #admin = session.query(Admin).get(telegram_id)
         return admin is not None
 
 
@@ -113,26 +116,22 @@ def get_teachers() -> list[Teacher]:
     """
     with Session() as session:
         return session.query(Teacher).all()
-    
+
 
 def get_not_assign_teacher_groups(teacher_id: int) -> list[Group]:
     """
     Функция возвращает список групп, которые не назначены преподавателю
 
     :param teacher_id: Telegram ID преподавателя
-
-    :return: Список групп, не назначенных преподавателю
     """
     with Session() as session:
-        assign_group = session.query(TeacherGroup).filter(
-            TeacherGroup.teacher_id == teacher_id
+        teacher = session.get(Teacher, teacher_id)
+        ids_assigned_groups = [it.id for it in teacher.groups]
+        query = select(Group).where(
+            Group.id.not_in(ids_assigned_groups)
         )
-        assign_group = [it.group_id for it in assign_group]
-        not_assign_group = session.query(Group).filter(
-            Group.id.not_in(assign_group)
-        ).all()
-        return not_assign_group
-    
+        return session.scalars(query).all()
+
 
 def assign_teacher_to_group(teacher_id: int, group_id: int) -> None:
     """
@@ -140,11 +139,12 @@ def assign_teacher_to_group(teacher_id: int, group_id: int) -> None:
 
     :param teacher_id: Telegram ID преподавателя
     :param group_id: Telegram ID группы
-
-    :return: None
     """
     with Session() as session:
-        session.add(TeacherGroup(teacher_id=teacher_id, group_id=group_id))
+        teacher = session.get(Teacher, teacher_id)
+        teacher.groups.append(
+            session.get(Group, group_id)
+        )
         session.commit()
 
 
@@ -158,31 +158,31 @@ def get_all_groups() -> list[Group]:
         return session.query(Group).all()
     
 
-def add_student(full_name: str, group_id: int, discipline_id: int):
+def add_student(full_name: str, group_id: int) -> None:
     """
     Функция добавляет студента в базу данных
 
     :param full_name: ФИО студента
     :param group_id: Telegram ID группы
-    :param discipline_id: Telegram ID дисциплины
-
-    :return: None
     """
     session = Session()
-    student = Student(full_name=full_name, group=group_id)
-    session.add(student)
-    session.flush()
-    discipline: Discipline = session.query(Discipline).get(discipline_id)
-    empty_homework = create_homeworks(
-        disciplines_works_from_json(discipline.works)
+    group: Group = session.get(Group, group_id)
+
+    student = Student(
+        full_name=full_name,
+        group_id=group_id
     )
-    session.add(
-        AssignedDiscipline(
-            student_id=student.id,
-            discipline_id=discipline_id,
-            home_work=homeworks_to_json(empty_homework)
+    group.students.append(student)
+    for discipline in group.disciplines:
+        empty_homework = create_homeworks(
+            disciplines_works_from_json(discipline.works)
         )
-    )
+        student.homeworks.append(
+            AssignedDiscipline(
+                discipline_id=discipline.id,
+                home_work=homeworks_to_json(empty_homework)
+            )
+        )
     session.commit()
     session.close()
 
@@ -219,37 +219,36 @@ def add_students_group(student_groups: list[StudentsGroup]) -> None:
 
     :raises DisciplineNotFoundException: Если дисциплина не найдена
     :raises GroupAlreadyExistException: Если такая группа уже существует
-
-    :return: None
     """
     session = Session()
     session.begin()
     try:
         for it in student_groups:
-            group = Group(group_name=it.group_name)
+            group = Group(
+                group_name=it.group_name,
+                students = [Student(full_name=student_raw) for student_raw in it.students]
+                )
             session.add(group)
-            session.flush()
-            students = [Student(full_name=student_raw, group=group.id) for student_raw in it.students]
-            session.add_all(students)
-            session.flush()
+
             for discipline in it.disciplines_short_name:
-                current_discipline = session.query(Discipline).filter(
+                query = select(Discipline).where(
                     Discipline.short_name.ilike(f"%{discipline}%")
-                ).first()
+                )
+                current_discipline = session.scalars(query).first()
                 if current_discipline is None:
                     raise DisciplineNotFoundException(f"{discipline} нет в БД")
-                
+
                 empty_homework = create_homeworks(
                     disciplines_works_from_json(current_discipline.works)
                 )
-                session.add_all(
-                    [
+                for student in group.students:
+                    student.homeworks.append(
                         AssignedDiscipline(
-                            student_id=student.id,
                             discipline_id=current_discipline.id,
                             home_work=homeworks_to_json(empty_homework)
-                    ) for student in students]
-                )
+                        )
+                    )
+                group.disciplines.append(current_discipline)
         session.commit()
     except DisciplineNotFoundException as ex:
         session.rollback()
@@ -267,11 +266,12 @@ def assign_teacher_to_discipline(teacher_id: int, discipline_id: int) -> None:
 
     :param teacher_id: Telegram ID преподавателя
     :param discipline_id: ID дисциплины
-
-    :return: None
     """
     with Session() as session:
-        session.add(TeacherDiscipline(teacher_id=teacher_id, discipline_id=discipline_id))
+        teacher = session.get(Teacher, teacher_id)
+        teacher.disciplines.append(
+            session.get(Discipline, discipline_id)
+        )
         session.commit()
 
 
@@ -284,15 +284,12 @@ def get_not_assign_teacher_discipline(teacher_id: int) -> list[Discipline]:
     :return: Список не присвоенных преподавателю дисциплин
     """
     with Session() as session:
-        assign_discipline = session.query(TeacherDiscipline).filter(
-            TeacherDiscipline.teacher_id == teacher_id
+        teacher = session.get(Teacher, teacher_id)
+        ids_assigned_disciplines = [it.id for it in teacher.disciplines]
+        query = select(Discipline).where(
+            Discipline.id.not_in(ids_assigned_disciplines)
         )
-        assign_discipline_id = [it.discipline_id for it in assign_discipline]
-        not_assign_discipline = session.query(Discipline).filter(
-            Discipline.id.not_in(assign_discipline_id)
-        ).all()
-
-        return not_assign_discipline
+        return session.scalars(query).all()
 
 
 def delete_group(group_id: int) -> None:
@@ -300,29 +297,10 @@ def delete_group(group_id: int) -> None:
     Функция удаляет группу из БД
 
     :param group_id: ID группы
-
-    :return: None
     """
     with Session() as session:
-        session.query(Group).filter(
-            Group.id == group_id
-        ).delete(synchronize_session="fetch")
-        session.query(TeacherGroup).filter(
-            TeacherGroup.group_id == group_id
-        ).delete(synchronize_session="fetch")
-
-        students = session.query(Student).filter(Student.group == group_id).all()
-
-        if not students:
-            session.commit()
-            return
-        students_id = [it.id for it in students]
-        session.query(AssignedDiscipline).filter(
-            AssignedDiscipline.student_id.in_(students_id)
-        ).delete(synchronize_session="fetch")
-        session.query(Student).filter(
-            Student.group == group_id
-        ).delete(synchronize_session="fetch")
+        query = delete(Group).where(Group.id == group_id)
+        session.execute(query)
         session.commit()
 
 
@@ -331,16 +309,10 @@ def delete_student(student_id: int) -> None:
     Функция удаляет студента из БД
     
     :param student_id: ID студента
-
-    :return: None
     """
     with Session() as session:
-        session.query(Student).filter(
-            Student.id == student_id
-        ).delete(synchronize_session="fetch")
-        session.query(AssignedDiscipline).filter(
-            AssignedDiscipline.student_id == student_id
-        ).delete(synchronize_session="fetch")
+        query = delete(Student).where(Student.id == student_id)
+        session.execute(query)
         session.commit()
 
 
@@ -349,32 +321,20 @@ def delete_teacher(teacher_id: int) -> None:
     Функция удаляет преподавателя из БД
 
     :param teacher_id: ID преподавателя
-
-    :return: None
     """
     with Session() as session:
-        session.query(Teacher).filter(
-            Teacher.id == teacher_id
-        ).delete(synchronize_session="fetch")
-
-        session.query(TeacherGroup).filter(
-            TeacherGroup.teacher_id == teacher_id
-        ).delete(synchronize_session="fetch")
-
-        session.query(TeacherDiscipline).filter(
-            TeacherDiscipline.teacher_id == teacher_id
-        ).delete(synchronize_session="fetch")
-        
+        query = delete(Teacher).where(Teacher.id == teacher_id)
+        session.execute(query)
         session.commit()
-
+        
 
 def get_all_disciplines() -> list[Discipline]:
     """
-        Функция возвращает список всех дисциплин
+    Функция возвращает список всех дисциплин
 
-        :param: None
+    :param: None
 
-        :return: Список дисциплин (объекты класса 'Discipline')
+    :return: Список дисциплин (объекты класса 'Discipline')
     """
     with Session() as session:
         return session.query(Discipline).all()
@@ -382,42 +342,41 @@ def get_all_disciplines() -> list[Discipline]:
 
 def get_discipline(discipline_id: int) -> Discipline:
     """
-        Функция возвращает конкретную дисциплину по ID
+    Функция возвращает конкретную дисциплину по ID
 
-        :param discipline_id: ID дисциплины
+    :param discipline_id: ID дисциплины
 
-        :return: Объект класса 'Discipline'
+    :return: Объект класса 'Discipline'
     """
     with Session() as session:
-        return session.query(Discipline).get(discipline_id)
+        return session.get(Discipline, discipline_id)
+        #return session.query(Discipline).get(discipline_id)
 
 
 def remote_start_db_fill(data: DbStartData) -> None:
     """
-        Функция для начальной (стартовой) настройки конфигурации системы, 
-        путём загрузки json-файла, удалённо
+    Функция для начальной (стартовой) настройки конфигурации системы, 
+    путём загрузки json-файла, удалённо
 
-        :param data: данные по предметам, студентам, группам и преподавателям,
-        а также какие дисциплины кому назначены и какой преподаватель их ведёт
+    :param data: данные по предметам, студентам, группам и преподавателям,
+    а также какие дисциплины кому назначены и какой преподаватель их ведёт
 
-        :raises DisciplineNotFoundException: дисциплина не найдена
-        :raises DisciplineAlreadyExistException: дисциплина уже существует
-        :raises GroupAlreadyExistException: группа с таким названием уже существует
-        :raises GroupNotFoundException: группа с таким названием не найдена
-
-        :return: None
+    :raises DisciplineNotFoundException: дисциплина не найдена
+    :raises DisciplineAlreadyExistException: дисциплина уже существует
+    :raises GroupAlreadyExistException: группа с таким названием уже существует
+    :raises GroupNotFoundException: группа с таким названием не найдена
     """
     session = Session()  # создаём объект сессии
     session.begin()  # начинаем транзакцию
     admin_default_tg = int(os.getenv("DEFAULT_ADMIN"))  # получаем Telegram ID админа
-    dis_short_names = {}  # создаём пустой словарь под имена дисциплин
-    groups_name = {}  # создаём пустой словарь под названия групп
+    disciplines: dict[str, Discipline] = {}  # создаём пустой словарь под имена дисциплин
+    groups: dict[str, Group] = {}  # создаём пустой словарь под названия групп
 
     # начинаем процедуру TRY для парсинга json-файла
     try:
         # парсинг дисциплин
         for discipline in data.disciplines:
-            if discipline.short_name in dis_short_names:
+            if discipline.short_name in disciplines:
                 raise DisciplineAlreadyExistException(f"{discipline.short_name} дублируется")
             dis = Discipline(
                 full_name=discipline.full_name,
@@ -429,77 +388,66 @@ def remote_start_db_fill(data: DbStartData) -> None:
                 max_tasks=counting_tasks(discipline),
                 max_home_works=len(discipline.works)
             )
-            session.add(dis)
-            session.flush()
-            dis_short_names[discipline.short_name] = dis.id
-        
+            disciplines[discipline.short_name] = dis
+
+        session.add_all(disciplines.values())
+        session.flush()
+
         # парсинг групп
         for it in data.groups:
-            group = Group(group_name=it.group_name)
-            session.add(group)
-            session.flush()
-            groups_name[it.group_name] = group.id
+            group = Group(
+                group_name=it.group_name,
+                students=[
+                    Student(full_name=student_raw)
+                    for student_raw in it.students
+                ]
+            )
+            groups[it.group_name] = group
 
-            students = [
-                Student(
-                    full_name=student_raw,
-                    group=group.id
-                ) for student_raw in it.students
-            ]
-            session.add_all(students)
-            session.flush()
+            for name in it.disciplines_short_name:
+                if name not in disciplines:
+                    raise DisciplineNotFoundException(f"{name} нет в БД")
 
-            for discipline in it.disciplines_short_name:
-                current_discipline = session.query(Discipline).filter(
-                    Discipline.short_name.ilike(f"%{discipline}%")
-                ).first()
-                if current_discipline is None:
-                    raise DisciplineNotFoundException(f"{discipline} нет в БД")
-                
                 empty_homework = create_homeworks(
-                    disciplines_works_from_json(current_discipline.works)
+                    disciplines_works_from_json(disciplines[name].works)
                 )
-                session.add_all([
-                    AssignedDiscipline(
-                        student_id=student.id,
-                        discipline_id=current_discipline.id,
-                        home_work=homeworks_to_json(empty_homework)
-                    ) for student in students]
-                ) 
+                disciplines[name].groups.append(
+                    groups[it.group_name]
+                )
+
+                for student in groups[it.group_name].students:
+                    student.homeworks.append(
+                        AssignedDiscipline(
+                            discipline_id=disciplines[name].id,
+                            home_work=homeworks_to_json(empty_homework)
+                        )
+                    )
+
         # парсинг преподавателей
         for it in data.teachers:
             teacher = Teacher(
                 full_name=it.full_name,
                 telegram_id=it.telegram_id
             )
-            session.add(teacher)
-            session.flush()
+
             for tgr in it.assign_groups:
-                if tgr not in groups_name:
+                if tgr not in groups:
                     raise GroupNotFoundException(f"Группа {tgr} не найдена")
-                session.add(
-                    TeacherGroup(
-                        teacher_id=teacher.id,
-                        group_id=groups_name[tgr]
-                    )
-                )
-            
+                teacher.groups.append(groups[tgr])
+
             for tdis in it.assign_disciplines:
-                if tdis not in dis_short_names:
+                if tdis not in disciplines:
                     raise DisciplineNotFoundException(f"Дисциплина {tdis} не найдена")
-                session.add(
-                    TeacherDiscipline(
-                        teacher_id=teacher.id,
-                        discipline_id=dis_short_names[tdis]
-                    )
-                )
-            
+                teacher.disciplines.append(disciplines[tdis])
+
             if it.is_admin and teacher.telegram_id != admin_default_tg:
                 session.add(
                     Admin(
                         telegram_id=teacher.telegram_id
                     )
                 )
+            session.add(teacher)
+
         # парсинг чатов
         for chat in data.chats:
             session.add(
@@ -523,12 +471,13 @@ def remote_start_db_fill(data: DbStartData) -> None:
     finally:
         session.close()
 
-
 def switch_admin_mode_to_teacher(admin_id: int) -> None:
+    """
+    Переключение режима администратора в режим преподавателя
+    
+    :param admin_id: Telegram ID преподавателя
+    """
     with Session() as session:
-        session.query(Admin).filter(
-            Admin.telegram_id == admin_id
-        ).update(
-            {"teacher_mode": True}
-        )
+        admin = session.get(Admin, admin_id)
+        admin.teacher_mode = True
         session.commit()

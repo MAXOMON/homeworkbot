@@ -13,11 +13,9 @@ from mrhomebot.configuration import bot
 async def handle_download_all_test_and_answer(message: Message):
     await _handle_download_all_test_and_answer(message)
 
-
 @bot.message_handler(is_admin=False, commands=["dowall"])
 async def handle_no_download_all_test_and_answer(message: Message):
     await bot.send_message(message.chat.id, "Нет прав доступа!!!")
-
 
 async def _handle_download_all_test_and_answer(message: Message):
     await bot.send_message(
@@ -39,10 +37,10 @@ async def _handle_download_all_test_and_answer(message: Message):
 
 def create_archive_all_data():
     """
-        Функция запуска создания архива из директории с дисциплинами,
-        где хранятся данные по ответам и тесты
+    Функция запуска создания архива из директории с дисциплинами,
+    где хранятся данные по ответам и тесты
 
-        :return: Путь до сформированного архива
+    :return: Путь до сформированного архива
     """
     path = pathlib.Path(pathlib.Path.cwd().joinpath(os.getenv('TEMP_REPORT_DIR')))
     file_name = f'data_{datetime.now().date()}'

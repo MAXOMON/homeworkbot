@@ -1,23 +1,23 @@
+from sqlalchemy import and_, select
 from database.main_db.database import Session
 
 from model.main_db.admin import Admin
-from model.main_db.assigned_discipline import AssignedDiscipline
 from model.main_db.discipline import Discipline
 from model.main_db.group import Group
 from model.main_db.student import Student
 from model.main_db.teacher import Teacher
-from model.main_db.teacher_discipline import TeacherDiscipline
-from model.main_db.teacher_group import TeacherGroup
-from sqlalchemy import and_
 
 
 def is_teacher(telegram_id: int) -> bool:
+    """
+    Проверяет, является ли пользователь преподавателем
+    :param telegram_id: Telegram_ID пользователя
+    """
     with Session() as session:
         teacher = session.query(Teacher).filter(
             Teacher.telegram_id == telegram_id
         ).first()
         return teacher is not None
-
 
 def get_assign_group_discipline(teacher_tg_id: int, group_id: int) -> list[Discipline]:
     """
@@ -29,66 +29,44 @@ def get_assign_group_discipline(teacher_tg_id: int, group_id: int) -> list[Disci
     :return: список дисциплин
     """
     with Session() as session:
-        disciplines = session.query(Discipline).join(
-            AssignedDiscipline,
-            AssignedDiscipline.discipline_id == Discipline.id
-        ).join(
-            Student,
-            Student.id == AssignedDiscipline.student_id
-        ).filter(
-                Student.group == group_id
-        ).join(
-            TeacherDiscipline,
-            TeacherDiscipline.discipline_id == Discipline.id
-        ).join(
-            Teacher,
-            Teacher.id == TeacherDiscipline.teacher_id
-        ).filter(
+        teacher = session.query(Teacher).filter(
             Teacher.telegram_id == teacher_tg_id
-        ).all()
+        ).first()
 
-        return disciplines
+        teacher_disciplines = {it.short_name for it in teacher.disciplines}
 
-    # disciplines = common_crud.get_group_disciplines(group_id)
-    # with Session() as session:
-    #     teacher = session.query(Teacher).filter(
-    #         Teacher.telegram_id == teacher_tg_id
-    #     ).first()
-    #     teacher_disciplines = session.query(TeacherDiscipline).filter(
-    #         TeacherDiscipline.teacher_id == teacher.id
-    #     ).all()
-    #     teacher_disciplines = [it.discipline_id for it in teacher_disciplines]
-    #     disciplines = [it for it in disciplines if it.id in teacher_disciplines]
-    #     return disciplines
+        group = session.query(Group).filter(
+            Group.id == group_id
+        ).first()
 
+        group_disciplines = {it.short_name for it in group.disciplines}
+
+        return [it for it in teacher.disciplines
+                if it.short_name in teacher_disciplines.intersection(group_disciplines)]
 
 def switch_teacher_mode_to_admin(teacher_tg_id: int) -> None:
+    """
+    Переключает режим преподавателя на режим администратора
+    
+    :param teacher_tg_id: Телеграмм ID преподавателя
+    """
     with Session() as session:
-        session.query(Admin).filter(
-            Admin.telegram_id == teacher_tg_id
-        ).update(
-            {'teacher_mode': False}
-        )
+        admin = session.get(Admin, teacher_tg_id)
+        admin.teacher_mode = False
         session.commit()
-
 
 def get_assign_groups(teacher_tg_id: int) -> list[Group]:
     """
     Функция запроса списка групп, у которых ведёт предметы преподаватель
 
     :param teacher_tg_id: Telegram ID преподавателя
-
-    :return: список групп
     """
     with Session() as session:
-        groups = session.query(Group).join(
-            TeacherGroup,
-            TeacherGroup.group_id == Group.id
-        ).join(
-            Teacher,
-            Teacher.id == TeacherGroup.teacher_id
-        ).filter(Teacher.telegram_id == teacher_tg_id).all()
-        return groups
+        smt = select(Teacher).where(
+            Teacher.telegram_id == teacher_tg_id
+        )
+        teacher = session.scalars(smt).first()
+        return teacher.groups
 
 def get_teacher_disciplines(teacher_tg_id: int) -> list[Discipline]:
     """
@@ -99,23 +77,23 @@ def get_teacher_disciplines(teacher_tg_id: int) -> list[Discipline]:
     :return: список дисциплин
     """
     with Session() as session:
-        disciplines = session.query(Discipline).join(
-            TeacherDiscipline,
-            TeacherDiscipline.discipline_id == Discipline.id
-        ).join(
-            Teacher,
-            Teacher.id == TeacherDiscipline.teacher_id
-        ).filter(Teacher.telegram_id == teacher_tg_id).all()
-        return disciplines
-
+        smt = select(Teacher).where(
+            Teacher.telegram_id == teacher_tg_id
+        )
+        teacher = session.scalars(smt).first()
+        return teacher.disciplines
 
 def get_auth_students(group_id: int) -> list[Student]:
+    """
+    Возвращает список аутентифицированных студентов
+
+    :param group_id: ID группы студента
+    """
     with Session() as session:
         students = session.query(Student).filter(
             and_(
-                Student.group == group_id,
+                Student.group_id == group_id,
                 Student.telegram_id.is_not(None)
             )
         ).all()
-
         return students

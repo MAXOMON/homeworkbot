@@ -12,8 +12,8 @@ from model.pydantic.student_report import StudentReport
 def __check_prefix(data: str) -> bool:
     if "academicPerf_" in data:
         return True
-    return False
-
+    else:
+        return False
 
 @bot.callback_query_handler(func=lambda call: __check_prefix(call.data))
 async def callback_academic_performance(call: CallbackQuery):
@@ -29,7 +29,6 @@ async def callback_academic_performance(call: CallbackQuery):
                 call.message.chat.id,
                 call.message.id
             )
-
 
 async def __create_report(
         call: CallbackQuery,

@@ -25,7 +25,9 @@ def run_deadline_report_builder(
         discipline_id
     )
     student_report.full_name = student.full_name
-    home_works = DisciplineHomeWorks(**json.loads(student_answer.home_work)).home_works
+    home_works = DisciplineHomeWorks(
+        **json.loads(student_answer.home_work)
+        ).home_works
 
     current_date = datetime.now().date()
 

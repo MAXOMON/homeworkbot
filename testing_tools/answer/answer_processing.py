@@ -63,7 +63,7 @@ class AnswerProcessing:
         """
         for record in records:
             test_result = TestResult(**json.loads(record.data))
-            text = f'<i>Результат тестирования:</i>\n'
+            text = '<i>Результат тестирования:</i>\n'
 
             test_result.successful_task.sort(key=lambda x: _get_lab_number(x.file_name))
             test_result.failed_task.sort(key=lambda x: _get_lab_number(x.file_name))

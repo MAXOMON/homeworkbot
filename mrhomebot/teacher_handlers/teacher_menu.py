@@ -7,7 +7,8 @@ from database.main_db import teacher_crud
 from database.main_db.admin_crud import is_admin
 from mrhomebot.admin_handlers import admin_menu
 from mrhomebot.admin_handlers.unban_student import create_unban_student_buttons
-from mrhomebot.teacher_handlers.utils import create_teacher_groups_button, create_teacher_discipline_button
+from mrhomebot.teacher_handlers.utils import create_teacher_groups_button, \
+    create_teacher_discipline_button
 
 
 class TeacherException(Exception):
@@ -62,18 +63,16 @@ def create_teacher_keyboard(message: Message | None = None) -> ReplyKeyboardMark
 
 
 def is_teacher_command(command: str) -> bool:
-    for key, value in __teacher_commands.items():
+    for _, value in __teacher_commands.items():
         if value == command:
             return True
     return False
-
 
 def get_current_teacher_command(command: str) -> TeacherCommand:
     for key, value in __teacher_commands.items():
         if value == command:
             return key
     raise TeacherException('Неизвестная команда')
-
 
 async def switch_teacher_to_admin_menu(message: Message):
     teacher_crud.switch_teacher_mode_to_admin(message.from_user.id)
@@ -85,7 +84,6 @@ async def switch_teacher_to_admin_menu(message: Message):
         reply_markup=admin_menu.first_admin_keyboard(message)
     )
 
-
 @bot.message_handler(
     is_teacher=True, func=lambda message: is_teacher_command(message.text)
 )
@@ -96,7 +94,7 @@ async def handle_commands(message: Message):
             await switch_teacher_to_admin_menu(message)
         case TeacherCommand.DOWNLOAD_FULL_REPORT:
             await create_teacher_groups_button(message, 'fullReport')
-        case TeacherCommand.DOWNLOAD_FINISH_REPORT: 
+        case TeacherCommand.DOWNLOAD_FINISH_REPORT:
             await create_teacher_groups_button(message, 'finishReport')
         case TeacherCommand.DOWNLOAD_SHORT_REPORT:
             await create_teacher_groups_button(message, 'shortReport')

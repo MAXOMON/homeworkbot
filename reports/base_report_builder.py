@@ -13,14 +13,14 @@ from model.pydantic.home_work import DisciplineHomeWorks
 
 class ReportFieldEnum(IntEnum):
     """
-        Номер столбца отчёта в формируемом файле
+    Номер столбца отчёта в формируемом файле
     """
     STUDENT_NAME = 1
     POINTS = 2
     LAB_COMPLETED = 3
     DEADLINES_FAILS = 4
     TASKS_COMPLETED = 5
-    TASK_RATID = 6
+    TASK_RATIO = 6
     NEXT = 7
 
 
@@ -41,7 +41,7 @@ class BaseReportBuilder:
         """
         self.group_id = group_id
         self.discipline_id = discipline_id
-        
+
         group = common_crud.get_group(group_id)
         discipline = common_crud.get_discipline(discipline_id)
 
@@ -55,7 +55,7 @@ class BaseReportBuilder:
         )
         self.wb = Workbook()
 
-    def build_report(self):
+    def build_report(self) -> None:
         """
         Метод, запускающий создание и заполнение базового отчёта
         
@@ -75,12 +75,12 @@ class BaseReportBuilder:
                 worksheet.cell(row=row, column=ReportFieldEnum.LAB_COMPLETED).value = "Полностью выполненых лаб"
                 worksheet.cell(row=row, column=ReportFieldEnum.DEADLINES_FAILS).value = "Кол-во сорванных сроков сдачи"
                 worksheet.cell(row=row, column=ReportFieldEnum.TASKS_COMPLETED).value = "Кол-во выполненных задач"
-                worksheet.cell(row=row, column=ReportFieldEnum.TASK_RATID).value = "Объём выполненных задач"
+                worksheet.cell(row=row, column=ReportFieldEnum.TASK_RATIO).value = "Объём выполненных задач"
                 row += 1
             if row > 1:
                 worksheet.cell(row=row, column=ReportFieldEnum.STUDENT_NAME).value = student.full_name
                 worksheet.cell(row=row, column=ReportFieldEnum.POINTS).value = answers.point
-                
+
                 deadlines_fails = 0
                 lab_completed = 0
                 for work in home_works:
@@ -96,16 +96,16 @@ class BaseReportBuilder:
                 worksheet.cell(row=row, column=ReportFieldEnum.DEADLINES_FAILS).value = deadlines_fails
 
                 task_completed = 0
-                for number_lab, work in enumerate(home_works):
-                    for number_taks, task in enumerate(work.tasks):
+                for _, work in enumerate(home_works):
+                    for _, task in enumerate(work.tasks):
                         if task.is_done:
                             task_completed += 1
 
                 worksheet.cell(row=row, column=ReportFieldEnum.TASKS_COMPLETED).value = task_completed
                 worksheet.cell(
-                    row=row, column=ReportFieldEnum.TASK_RATID,
+                    row=row, column=ReportFieldEnum.TASK_RATIO,
                 ).value = round(task_completed / self.tasks_in_discipline, 3)
-            
+
             row += 1
 
     def save_report(self):

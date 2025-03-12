@@ -21,12 +21,12 @@ class Discipline(Base):
     max_home_works: Mapped[int] = mapped_column(nullable=False)
     works: Mapped[str] = mapped_column(JSON, nullable=False)  # DisciplineWorksConfig
 
-    groups = Mapped[List["Group"]] = relationship(
+    groups: Mapped[List['Group']] = relationship(
         secondary=association_discipline_to_group,
         back_populates="disciplines"
     )
 
-    teachers = Mapped[List["Teacher"]] = relationship(
+    teachers: Mapped[List['Teacher']] = relationship(
         secondary=association_teacher_to_discipline,
         back_populates="disciplines"
     )

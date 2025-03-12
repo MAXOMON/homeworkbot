@@ -22,20 +22,17 @@ __student_commands = {
     StudentCommand.ACADEMIC_PERFORMANCE: "Успеваемость"
 }
 
-
 def is_student_command(command: str) -> bool:
-    for key, value in __student_commands.items():
+    for _, value in __student_commands.items():
         if value == command:
             return True
     return False
-
 
 def get_current_student_command(command: str) -> StudentCommand:
     for key, value in __student_commands.items():
         if value == command:
             return key
     raise StudentException('Неизвестная команда')
-
 
 def student_keyboard(message: Message | None = None) -> ReplyKeyboardMarkup:
     markup = ReplyKeyboardMarkup(resize_keyboard=True)
@@ -47,7 +44,6 @@ def student_keyboard(message: Message | None = None) -> ReplyKeyboardMarkup:
         KeyboardButton(__student_commands[StudentCommand.ACADEMIC_PERFORMANCE])
     )
     return markup
-
 
 @bot.message_handler(
         is_student=True, func=lambda message: is_student_command(message.text)

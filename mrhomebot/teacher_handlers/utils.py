@@ -24,7 +24,6 @@ async def create_teacher_groups_button(message: Message, callback_prefix: str):
         reply_markup=markup
     )
 
-
 async def create_teacher_discipline_button(message: Message, callback_prefix: str):
     disciplines = teacher_crud.get_teacher_disciplines(message.from_user.id)
     if len(disciplines) < 1:

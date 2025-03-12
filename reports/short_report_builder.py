@@ -6,11 +6,11 @@ from reports.base_report_builder import BaseReportBuilder, ReportFieldEnum
 
 
 class ShortReportBuilder(BaseReportBuilder):
-    
+
     def __init__(self, group_id: int, discipline_id: int):
         super().__init__(group_id, discipline_id, "short_report")
-        
-    def build_report(self):
+
+    def build_report(self) -> None:
         super().build_report()
         worksheet = self.wb.active
 
@@ -24,16 +24,16 @@ class ShortReportBuilder(BaseReportBuilder):
                 for number_lab, work in enumerate(home_works):
                     worksheet.cell(
                         row=row, column=col
-                    ).value = f"lab{number_lab+1}_ratio"
+                    ).value = f"lab{number_lab + 1}_ratio"
                     worksheet.cell(
-                        row=row, column=col+1
-                    ).value = f'lab{number_lab+1}_deadline'
+                        row=row, column=col + 1
+                    ).value = f'lab{number_lab + 1}_deadline'
                     col += 2
                 row += 1
             if row > 1:
                 col = ReportFieldEnum.NEXT
                 for work in home_works:
-                    cell = worksheet.cell(row=row, column=col)
+                    cell = worksheet.cell(row=row, column=col+1)
                     if datetime.now().date() > work.deadline:
                         if work.end_time is not None:
                             if work.end_time.date() > work.deadline:
@@ -48,7 +48,7 @@ class ShortReportBuilder(BaseReportBuilder):
                     else:
                         cell.value = 'good'
                         cell.fill = BaseReportBuilder.GREEN_FILL
-                    
+
                     tasks_in_lab = len(work.tasks)
                     tasks_completed = 0
                     for task in work.tasks:

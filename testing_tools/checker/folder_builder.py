@@ -33,7 +33,7 @@ class FolderBuilder:
 
     def get_lab_number(self) -> int:
         return self.answer.lab_number
-    
+
     def build(self) -> Path:
         discipline = common_crud.get_discipline(self.answer.discipline_id)
         test_path = Path.cwd().joinpath(
@@ -76,7 +76,6 @@ class FolderBuilder:
         for test_file in temp_test_files:
             shutil.copy(test_file, self.docker_folder)
 
-
         formatted_current_time = current_time.replace(microsecond=0)
 
         log_init_data = TestLogInit(
@@ -99,18 +98,18 @@ class FolderBuilder:
             )
 
         self.is_test_available = len(self.rejected_files) <= len(answers)
-        
+
         return self.docker_folder
-    
+
     def get_rejected_file_names(self) -> list[str]:
         return self.rejected_files
-    
+
     def has_rejected_files(self) -> bool:
         return len(self.rejected_files) > 0
-    
+
     def has_file_for_test(self) -> bool:
         return self.is_test_available
-    
+
     def add_file(self, path_to_file: Path) -> None:
         shutil.copy(path_to_file, self.docker_folder)
 

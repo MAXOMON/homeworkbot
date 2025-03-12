@@ -14,7 +14,7 @@ from model.pydantic.db_creator_settings import DbCreatorSettings
 
 def init_app() -> None:
     load_dotenv()
-    
+
     if not database_exists(main_engine.url):
         create_database(main_engine.url)
         settings = DbCreatorSettings(

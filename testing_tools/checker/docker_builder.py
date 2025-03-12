@@ -14,7 +14,7 @@ class DockerBuilder:
     def __init__(self, path_to_folder: Path, student_id: int, lab_number: int) -> None:
         """
         :param path_to_folder: путь до директории с файлами, которые будут отправлены в контейнер
-        :param student_id: id студента
+        :param student_id: Telegram id студента
         :param lab_number: номер лабораторной (домашней) работы
         """
         self.test_dir = path_to_folder
@@ -54,4 +54,3 @@ class DockerBuilder:
         with docker.build(context_path=self.test_dir, tags=self.tag_name) as my_image:
             with docker.run(self.tag_name, name=self.tag_name, detach=True) as output:
                 self.logs = docker.container.logs(output) or docker.container.logs(output.id)
-        

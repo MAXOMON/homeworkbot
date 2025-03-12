@@ -6,11 +6,11 @@ from pathlib import Path
 
 def create_answers_archive(path_to_group_folder: Path) -> Path:
     """
-        Функция формирования архива ответов группы
+    Функция формирования архива ответов группы
 
-        :param path_to_group_folder: путь до директории группы, где хранятся ответы
+    :param path_to_group_folder: путь до директории группы, где хранятся ответы
 
-        :return: путь до сформированного архива
+    :return: путь до сформированного архива
     """
     path = Path(Path.cwd().joinpath(os.getenv("TEMP_REPORT_DIR")))
     file_name = f'data_{datetime.now().date()}'

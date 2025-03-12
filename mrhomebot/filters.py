@@ -1,5 +1,4 @@
 import telebot
-from telebot import asyncio_filters
 from telebot.types import Message
 from telebot.asyncio_filters import AdvancedCustomFilter
 from telebot.callback_data import CallbackData, CallbackDataFilter
@@ -9,9 +8,8 @@ from database.main_db import admin_crud, teacher_crud, student_crud
 
 
 add_student_factory = CallbackData(
-    "full_name",
+    #"full_name",
     "group_id",
-    "discipline_id",
     "next_step",
     prefix="StudentADD_"
 )

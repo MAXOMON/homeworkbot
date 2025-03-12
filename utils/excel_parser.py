@@ -4,8 +4,7 @@ import openpyxl
 from openpyxl.workbook.workbook import Workbook
 from openpyxl.worksheet.worksheet import Worksheet
 
-from model.main_db.teacher import TeacherRaw
-from model.main_db.student import StudentRaw
+from model.pydantic.db_start_data import StudentRaw, TeacherRaw
 
 
 class ExcelDataParserError(Exception):

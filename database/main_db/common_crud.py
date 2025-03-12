@@ -1,4 +1,6 @@
 from enum import Enum
+from sqlalchemy import exists, and_, select, delete
+from sqlalchemy.orm import joinedload, selectinload
 
 from database.main_db.database import Session
 from database.main_db import admin_crud
@@ -6,13 +8,12 @@ from database.main_db import admin_crud
 from model.main_db.admin import Admin
 from model.main_db.student import Student
 from model.main_db.teacher import Teacher
+from model.main_db.teacher_group import association_teacher_to_group
 from model.main_db.chat import Chat
 from model.main_db.group import Group
 from model.main_db.assigned_discipline import AssignedDiscipline
 from model.main_db.discipline import Discipline
-from model.main_db.student import Student
 from model.main_db.student_ban import StudentBan
-from model.main_db.teacher_group import TeacherGroup
 
 import json
 from datetime import datetime
@@ -48,26 +49,15 @@ def user_verification(telegram_id: int) -> UserEnum:
             return UserEnum.Student
     return UserEnum.Unknown
 
-
 def get_chats() -> list[int]:
     with Session() as session:
         chats = session.query(Chat).all()
         return [it.chat_id for it in chats]
 
-
 def get_group_disciplines(group_id: int) -> list[Discipline]:
     with Session() as session:
-        disciplines = session.query(Discipline).join(
-            AssignedDiscipline,
-            AssignedDiscipline.discipline_id == Discipline.id
-        ).join(
-            Student,
-            Student.id == AssignedDiscipline.student_id
-        ).filter(
-            Student.group == group_id
-        ).all()
-        return disciplines
-
+        group = session.get(Group, group_id)
+        return group.disciplines
 
 def ban_student(telegram_id: int) -> None:
     """
@@ -81,22 +71,16 @@ def ban_student(telegram_id: int) -> None:
         session.add(StudentBan(telegram_id=telegram_id))
         session.commit()
 
-
 def unban_student(telegram_id: int) -> None:
     """
     Функция для удаления идентификатора студента из бан-листа
 
     :param telegram_id: Telegram ID студента
-
-    :return: None
     """
     with Session() as session:
-        student = session.query(StudentBan).filter(
-            StudentBan.telegram_id == telegram_id
-        )
-        student.delete(synchronize_session="fetch")
+        query = delete(StudentBan).where(StudentBan.telegram_id == telegram_id)
+        session.execute(query)
         session.commit()
-
 
 def is_ban(telegram_id: int) -> bool:
     """
@@ -107,9 +91,8 @@ def is_ban(telegram_id: int) -> bool:
     :return: True, если студент в бан-листе, иначе False
     """
     with Session() as session:
-        tg_id = session.query(StudentBan).get(telegram_id)
+        tg_id = session.get(StudentBan, telegram_id)
         return tg_id is not None
-    
 
 def get_ban_students(teacher_telegram_id: int) -> list[Student]:
     """
@@ -123,27 +106,26 @@ def get_ban_students(teacher_telegram_id: int) -> list[Student]:
     """
     with Session() as session:
         if admin_crud.is_admin_no_teacher_mode(teacher_telegram_id):
-            students = session.query(Student).filter(
+            query = select(Student).where(
                 exists().where(StudentBan.telegram_id == Student.telegram_id)
-            ).all()
-            return students
+            )
+            return session.scalars(query).all()
         else:
-            students = session.query(Student).filter(
+            query = select(Student).where(
                 exists().where(StudentBan.telegram_id == Student.telegram_id)
             ).join(
                 Group,
-                Group.id == Student.group
+                Student.group_id == Group.id
             ).join(
-                TeacherGroup,
-                TeacherGroup.group_id == Group.id
+                association_teacher_to_group,
+                association_teacher_to_group.c.group_id == Group.id
             ).join(
                 Teacher,
-                Teacher.id == TeacherGroup.teacher_id
-            ).filter(
+                association_teacher_to_group.c.teacher_id == Teacher.id
+            ).where(
                 Teacher.telegram_id == teacher_telegram_id
-            ).all()
-            return students
-
+            )
+            return session.scalars(query).all()
 
 def get_students_from_group_for_ban(group_id: int) -> list[Student]:
     """
@@ -154,15 +136,14 @@ def get_students_from_group_for_ban(group_id: int) -> list[Student]:
     :return: список студентов
     """
     with Session() as session:
-        students = session.query(Student).filter(
+        students = session.query(Student).options(joinedload(Student.group)).filter(
             and_(
-                Student.group == group_id,
+                Student.group_id == group_id,
                 Student.telegram_id.is_not(None),
                 ~exists().where(StudentBan.telegram_id == Student.telegram_id)
             )
         ).all()
         return students
-
 
 def get_students_from_group(group_id: int) -> list[Student]:
     """
@@ -173,21 +154,33 @@ def get_students_from_group(group_id: int) -> list[Student]:
     :return: список студентов
     """
     with Session() as session:
-        students = session.query(Student).filter(
-            Student.group == group_id
-        ).all()
-        return students
+        #students = session.query(Student).where(
+        #    Student.group_id == group_id
+        #).all()
+        #return students
+        # Получаем группу с заранее загруженными студентами
+        stmt = (
+            select(Group)
+            .options(selectinload(Group.students))
+            .where(Group.id == group_id)
+        )
+        group = session.execute(stmt).scalar_one_or_none()
+        
+        if group is None:
+            print("Группа не найдена.")
+            return []
 
+        return group.students
 
 def get_group(group_id: int) -> Group:
     with Session() as session:
-        return session.query(Group).get(group_id)
-
+        result = session.query(Group).get(group_id)
+        return result
 
 def get_discipline(discipline_id: int) -> Discipline:
     with Session() as session:
-        return session.query(Discipline).get(discipline_id)
-
+        result = session.query(Discipline).get(discipline_id)
+        return result
 
 def get_student_discipline_answer(student_id: int, discipline_id: int) -> AssignedDiscipline:
     with Session() as session:
@@ -197,11 +190,9 @@ def get_student_discipline_answer(student_id: int, discipline_id: int) -> Assign
         ).first()
         return answers
 
-
 def get_student_from_id(student_id: int) -> Student:
     with Session() as session:
         return session.query(Student).get(student_id)
-    
 
 def write_test_result(lab_report: LabReport, input_record: QueueIn) -> None:
     """
@@ -231,7 +222,7 @@ def write_test_result(lab_report: LabReport, input_record: QueueIn) -> None:
         if lab_report.lab_id == it.number:
             lab = it
             break
-    
+
     task_done = 0
     for task in lab.tasks:
         task_done += 1 if task.is_done else 0
@@ -252,7 +243,7 @@ def write_test_result(lab_report: LabReport, input_record: QueueIn) -> None:
         lab.is_done = True
         if lab.deadline < end_time.date():
             too_slow = True
-        
+
         discipline = session.query(Discipline).get(assig_discipline.discipline_id)
 
         scale_point = 100.0 / discipline.max_tasks
@@ -261,7 +252,6 @@ def write_test_result(lab_report: LabReport, input_record: QueueIn) -> None:
             lab_points *= 0.5
 
         assig_discipline.point += lab_points
-    
     assig_discipline.home_work = utils.homeworks_to_json(hwork)
     session.commit()
     session.close()

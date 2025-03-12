@@ -12,6 +12,7 @@ class Group(Base):
     __tablename__ = "groups"
 
     id: Mapped[int] = mapped_column(primary_key=True)
+    #group_name: Mapped[str] = Column(String(20), unique=True)
     group_name: Mapped[str] = mapped_column(String(20), unique=True)
 
     students: Mapped[List["Student"]] = relationship(

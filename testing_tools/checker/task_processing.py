@@ -34,12 +34,9 @@ class TaskProcessing:
         self.docker_amount_restriction = docker_amount_restriction
 
     async def run(self):
-        try:
-            async with asyncio.TaskGroup() as tg:
-                for it in range(self.docker_amount_restriction):
-                    tg.create_task(self.__task_processing())
-        except:
-            pass
+        async with asyncio.TaskGroup() as tg:
+            for _ in range(self.docker_amount_restriction):
+                tg.create_task(self.__task_processing())
 
     async def __task_processing(self):
         while True:
@@ -77,7 +74,7 @@ def _run_prepare_docker(record: QueueIn, temp_folder_path: Path) -> None:
         )
     if not folder_builder.has_file_for_test():
         return None
-    
+
     keywords_controller = KeyWordsController(docker_folder_path)
     keywords_controller.run()
     if keywords_controller.has_rejected_files():
@@ -86,15 +83,15 @@ def _run_prepare_docker(record: QueueIn, temp_folder_path: Path) -> None:
             record.chat_id,
             TestRejectedFiles(
                 type=RejectedType.KeyWordsError,
-                description="В файле(-ах) имеются запрещенные ключевые слова, "
-                    f"либо не используются необходимые для решения задачи",
+                description="В файле(-ах) имеются запрещенные ключевые слова, " +
+                    "либо не используются необходимые для решения задачи",
                 files=keywords_controller.get_rejected_file_names()
             )
         )
-    
+
     if not keywords_controller.has_file_for_test():
         return None
-    
+
     module_path = Path.cwd().joinpath('testing_tools')
 
     folder_builder.add_file(module_path.joinpath('conftest.py'))
@@ -113,7 +110,7 @@ def _run_prepare_docker(record: QueueIn, temp_folder_path: Path) -> None:
         lab_report = LabReport(**json.loads(result))
     except:
         print("Произошла ошибка, при чтении docker.logs(output)")
-        
+
     common_crud.write_test_result(lab_report, record)
     _send_test_result_to_bot(lab_report, record)
 

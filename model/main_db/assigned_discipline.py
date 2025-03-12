@@ -2,18 +2,24 @@ from sqlalchemy import ForeignKey, JSON
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from database.main_db.database import Base
-#from model.main_db.student import Student
 
 
 class AssignedDiscipline(Base):
+    """
+    :param discipline_id: ID присвоенной дисциплины
+    :param student_id: ID студента
+    :param point: количество баллов
+    :param home_work: выполненные работы, DisciplineHomeWorks,
+     необходимо передать в формате JSON
+    """
     __tablename__ = "assigned_discipline"
 
     id: Mapped[int] = mapped_column(primary_key=True)
     discipline_id: Mapped[int] = mapped_column(ForeignKey("disciplines.id"), nullable=False)
     student_id: Mapped[int] = mapped_column(
-        ForeignKey("students.id", ondelete="CASCADE"), 
+        ForeignKey("students.id", ondelete="CASCADE"),
         nullable=False
-        )
+    )
     point: Mapped[float] = mapped_column(default=0)
     home_work: Mapped[str] = mapped_column(JSON, nullable=False)  # DisciplineHomeWorks
 

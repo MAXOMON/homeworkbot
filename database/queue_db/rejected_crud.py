@@ -32,18 +32,15 @@ def add_record(
     session.commit()
     session.close()
 
-
 def is_empty() -> bool:
     with Session() as session:
         data = session.query(Rejected).first()
         return data is None
 
-
 def is_not_empty() -> bool:
     with Session() as session:
         data = session.query(Rejected).first()
         return data is not None
-
 
 def get_first_record() -> Rejected:
     with Session() as session:

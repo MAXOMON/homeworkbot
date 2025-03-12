@@ -20,16 +20,13 @@ class AdminStates(StatesGroup):
 async def handle_upload_start_configuration(message: Message):
     await _handle_upload_start_configuration(message)
 
-
 @bot.message_handler(is_admin=False, commands=["upconfig"])
 async def handle_no_upload_start_configuration(message: Message):
     await bot.send_message(message.chat.id, "Нет прав доступа!!!")
 
-
 async def _handle_upload_start_configuration(message: Message):
     await bot.send_message(message.chat.id, "Загрузите json-файл для наполнения БД")
     await bot.set_state(message.from_user.id, AdminStates.upload_config, message.chat.id)
-
 
 @bot.message_handler(state=AdminStates.upload_config, content_types=["document"])
 async def handle_upload_discipline(message: Message):
@@ -50,7 +47,7 @@ async def handle_upload_discipline(message: Message):
             await finish_upload_file_message(
                 message,
                 result_message,
-                f"<i>Стартовое заполнение БД завершено!</i>"
+                "<i>Стартовое заполнение БД завершено!</i>"
             )
             await bot.delete_state(message.from_user.id, message.chat.id)
         except DisciplineNotFoundException as dnf_ex:

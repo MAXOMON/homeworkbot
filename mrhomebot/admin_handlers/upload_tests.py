@@ -1,7 +1,6 @@
 """
 Модуль обработки команды администратора на загрузку тестов к выбранной дисциплине
 """
-
 from telebot.asyncio_handler_backends import StatesGroup, State
 from telebot.types import Message, CallbackQuery, InlineKeyboardButton, InlineKeyboardMarkup
 

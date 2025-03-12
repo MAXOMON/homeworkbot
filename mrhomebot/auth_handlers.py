@@ -26,8 +26,6 @@ async def is_subscribed(chat_id: int, user_id: int) -> bool:
     except ApiTelegramException as ex:
         if ex.result_json["description"] == "Bad Request: user is not subscribed":
             return False
-        
-
 
 @bot.message_handler(commands=["start"])
 async def handle_start(message: Message):
@@ -61,7 +59,7 @@ async def handle_start(message: Message):
                 user_in_chat = await is_subscribed(chat_id, message.from_user.id)
                 if user_in_chat:
                     break
-            
+
             if user_in_chat:
                 markup = InlineKeyboardMarkup(row_width=2)
                 markup.add(
@@ -86,7 +84,6 @@ async def handle_start(message: Message):
                     message.chat.id,
                     "Пожалуйста, подпишитесь на канал!!!",
                 )
-                
 
 @bot.callback_query_handler(func=lambda call: "start_" in call.data)
 async def callback_auth_query(call: CallbackQuery):
@@ -116,7 +113,6 @@ async def callback_auth_query(call: CallbackQuery):
                 call.message.chat.id,
                 call.message.id,
             )
-
 
 @bot.message_handler(state=AuthStates.full_name)
 async def input_full_name(message: Message):
