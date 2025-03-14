@@ -165,9 +165,8 @@ def get_students_from_group(group_id: int) -> list[Student]:
             .where(Group.id == group_id)
         )
         group = session.execute(stmt).scalar_one_or_none()
-        
+
         if group is None:
-            print("Группа не найдена.")
             return []
 
         return group.students

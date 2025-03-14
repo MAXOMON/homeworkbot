@@ -14,8 +14,15 @@ async def save_test_files(path_to_test: str, downloaded_file: bytes) -> None:
     path = Path.cwd()
     path = Path(path.joinpath(path_to_test))
     if os.listdir(path):
-        for file_path in os.listdir(path):
-            shutil.rmtree(file_path)
+        for file_name in os.listdir(path):
+            file_path = path.joinpath(file_name)
+            if os.path.isfile(file_path):
+                os.remove(file_path)
+            else:
+                shutil.rmtree(file_path)
+
+        #for file_path in os.listdir(path):
+        #    shutil.rmtree(file_path)
 
     with open(path.joinpath("archive.zip"), "wb") as new_file:
         new_file.write(downloaded_file)

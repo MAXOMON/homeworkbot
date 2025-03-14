@@ -41,7 +41,7 @@ class DockerBuilder:
         file.append('RUN ["pytest", "--tb=no"]\n')
         file.append('CMD ["python3", "docker_output.py"]\n')
 
-        f = open(f"{self.test_dir}/Dockerfile", "w")
+        f = open(self.test_dir.joinpath('Dockerfile'), "w")
         f.writelines(file)
         f.close()
 

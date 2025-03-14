@@ -59,13 +59,13 @@ class StudentFloodMiddleware(BaseMiddleware):
     async def pre_process(self, message: Message, data):
         if student_crud.is_student(message.from_user.id):
             if message.text in ["Загрузить ответ", "Ближайший дедлайн", "Успеваемость"]:
-                if (not message.from_user.id in self.last_answer_time and
+                if (message.from_user.id not in self.last_answer_time and
                      message.text == "Загрузить ответ"):
                     self.state[message.from_user.id] = FloodMiddlewareState.WAIT_UPLOAD_ANSWER
                     self.last_answer_time[message.from_user.id] = message.date
                     return
 
-                if (not message.from_user.id in self.last_command_time and
+                if (message.from_user.id not in self.last_command_time and
                         message.text in ["Ближайший дедлайн", "Успеваемость"]):
                     self.last_command_time[message.from_user.id] = message.date
                     return
@@ -77,15 +77,15 @@ class StudentFloodMiddleware(BaseMiddleware):
                         if (message.date - self.last_answer_time[message.from_user.id] < 
                                 self.load_answers_limit):
                             last_time = self.load_answers_limit
-                            last_time -= message.date - self.last_command_time[message.from_user.id]
+                            last_time -= message.date - self.last_answer_time.get(message.from_user.id)
                             is_flood = True
                         else:
                             self.state[message.from_user.id] = FloodMiddlewareState.WAIT_UPLOAD_ANSWER
-                        self.last_command_time[message.from_user.id] = message.date
+                        self.last_answer_time[message.from_user.id] = message.date
                     case _:
                         if (message.date - self.last_command_time[message.from_user.id] < self.commands_limit):
                             last_time = self.commands_limit
-                            last_time -= message.date - self.last_command_time[message.from_user.id]
+                            last_time -= message.date - self.last_command_time.get(message.from_user.id)
                             is_flood = True
                         self.last_command_time[message.from_user.id] = message.date
                 if is_flood:

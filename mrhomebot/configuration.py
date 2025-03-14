@@ -23,7 +23,16 @@ bot.add_custom_filter(AddStudentCallbackFilter())
 
 bot.setup_middleware(BanMiddleware(bot))
 
-if bool(os.getenv("FLOOD_MIDDLEWARE")):
+def my_str_to_bool(value: str) -> bool:
+    if value == 'True':
+        return True
+    elif value == 'False':
+        return False
+    else:
+        raise ValueError('Правильно заполните .env')
+
+
+if my_str_to_bool(os.getenv("FLOOD_MIDDLEWARE")):
     bot.setup_middleware((
         StudentFloodMiddleware(
             bot,
