@@ -3,8 +3,8 @@
     {
       "full_name": "Технологии и методы программирования",
       "short_name": "ТМП",
-      "path_to_test": "_disciplines\\tmp\\test",
-      "path_to_answer": "_disciplines\\tmp\\answer",
+      "path_to_test": "_disciplines/tmp/test",
+      "path_to_answer": "_disciplines/tmp/answer",
       "language": "python",
       "works": [
         {
