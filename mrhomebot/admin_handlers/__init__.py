@@ -1,3 +1,6 @@
+"""
+...
+"""
 __all__ = ["admin_menu", "admin_keyboard"]
 
 import mrhomebot.admin_handlers.admin_menu as admin_menu

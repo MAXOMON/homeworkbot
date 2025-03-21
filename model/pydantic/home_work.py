@@ -1,9 +1,14 @@
+"""
+The module contains the necessary models and parameters for processing
+and checking data "home_works.json" for their subsequent addition
+to the table  'assigned_discipline'
+"""
 from datetime import datetime, date
-
 from pydantic import BaseModel
 
 
 class HomeTask(BaseModel):
+    """Process each task in detail"""
     number: int
     is_done: bool = False
     last_try_time: datetime | None = None
@@ -11,6 +16,7 @@ class HomeTask(BaseModel):
 
 
 class HomeWork(BaseModel):
+    """Review each homework assignment in detail."""
     number: int
     deadline: date
     tasks: list[HomeTask]
@@ -20,4 +26,5 @@ class HomeWork(BaseModel):
 
 
 class DisciplineHomeWorks(BaseModel):
+    """Process the list of homework"""
     home_works: list[HomeWork]

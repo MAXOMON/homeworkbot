@@ -1,24 +1,28 @@
+"""This module is intended for initial filling of the database"""
 from database.main_db.first_run_configurator import FirstRunConfigurator
+from database.main_db.database import create_tables, Session
 from model.pydantic.db_creator_settings import DbCreatorSettings
-
 from model.main_db.group import Group
 from model.main_db.student import Student
 from model.main_db.teacher import Teacher
 from model.main_db.discipline import Discipline
-
 from model.main_db.assigned_discipline import AssignedDiscipline
-from model.main_db.teacher_discipline import association_teacher_to_discipline
-from model.main_db.teacher_group import association_teacher_to_group
-from model.main_db.discipline_group import association_discipline_to_group
 from model.main_db.admin import Admin
-from model.main_db.chat import Chat
-from model.main_db.student_ban import StudentBan
-
-
-from database.main_db.database import create_tables, Session
+#from model.main_db.chat import Chat
+#from model.main_db.student_ban import StudentBan
+#from model.main_db.teacher_discipline import association_teacher_to_discipline
+#from model.main_db.teacher_group import association_teacher_to_group
+#from model.main_db.discipline_group import association_discipline_to_group
 
 
 def create_main_tables(settings: DbCreatorSettings) -> None:
+    """
+    create all the main tables
+
+    :param settings: formatted data structure
+    
+    :return None:
+    """
     create_tables()
 
     if not settings.remote_configuration:
@@ -31,15 +35,16 @@ def create_main_tables(settings: DbCreatorSettings) -> None:
         session.add(Admin(telegram_id=settings.default_admin))
         session.commit()
         session.close()
-        
 
 def fill_db_from_files(disciplines_path: str,
                        excel_data_path: str) -> None:
     """
-    Функция для заполнения основной БД при локальной конфигурации
+    Fill the database with primary data 
+    from the local configuration
 
-    :param disciplines_path: путь до файла с конфигурацией дисциплин
-    :param excel_data_path: путь до файла с данными о преподавателях и студентах
+    :param disciplines_path: path to the discipline configuration file
+    :param excel_data_path: path to file
+        with data on teachers and students
     """
     configurator = FirstRunConfigurator(disciplines_path, excel_data_path)
     disciplines: dict[str, Discipline] = {}
@@ -61,8 +66,9 @@ def fill_db_from_files(disciplines_path: str,
         )
 
     temp_students: dict[str, list[Student]] = {}
-    for it in configurator.students_config:
-        for group_name, students_raw_list in configurator.students_config[it].items():
+    for it, _ in configurator.students_config.items():
+        for group_name, students_raw_list \
+            in configurator.students_config[it].items():
             temp_students[it] = [
                 Student(full_name=it.full_name) for it in students_raw_list
             ]

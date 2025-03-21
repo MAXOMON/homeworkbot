@@ -1,6 +1,8 @@
+"""
+This module contains various checking functions that are specific to teachers.
+"""
 from sqlalchemy import and_, select
 from database.main_db.database import Session
-
 from model.main_db.admin import Admin
 from model.main_db.discipline import Discipline
 from model.main_db.group import Group
@@ -10,8 +12,11 @@ from model.main_db.teacher import Teacher
 
 def is_teacher(telegram_id: int) -> bool:
     """
-    Проверяет, является ли пользователь преподавателем
-    :param telegram_id: Telegram_ID пользователя
+    Check if the user is a teacher
+
+    :param telegram_id: user Telegram_ID
+
+    :return bool: True IF is a theacher ELSE False
     """
     with Session() as session:
         teacher = session.query(Teacher).filter(
@@ -19,14 +24,16 @@ def is_teacher(telegram_id: int) -> bool:
         ).first()
         return teacher is not None
 
-def get_assign_group_discipline(teacher_tg_id: int, group_id: int) -> list[Discipline]:
+def get_assign_group_discipline(
+        teacher_tg_id: int, group_id: int) -> list[Discipline]:
     """
-    Функция запроса списка дисциплин, которые числятся за преподавателем у конкретной группы
+    Get a list of disciplines that are assigned to a teacher
+    for a specific group
 
-    :param teacher_tg_id: Telegram ID преподавателя
-    :param group_id: идентификатор группы
+    :param teacher_tg_id: teacher Telegram ID
+    :param group_id: group ID
 
-    :return: список дисциплин
+    :return list[Discipline]: list of objects of class Discipline
     """
     with Session() as session:
         teacher = session.query(Teacher).filter(
@@ -42,13 +49,16 @@ def get_assign_group_discipline(teacher_tg_id: int, group_id: int) -> list[Disci
         group_disciplines = {it.short_name for it in group.disciplines}
 
         return [it for it in teacher.disciplines
-                if it.short_name in teacher_disciplines.intersection(group_disciplines)]
+                if it.short_name in teacher_disciplines.intersection(
+                    group_disciplines)]
 
 def switch_teacher_mode_to_admin(teacher_tg_id: int) -> None:
     """
-    Переключает режим преподавателя на режим администратора
+    Switch from teacher mode to administrator mode
     
-    :param teacher_tg_id: Телеграмм ID преподавателя
+    :param teacher_tg_id: teacher Тelegram ID
+
+    :return None:
     """
     with Session() as session:
         admin = session.get(Admin, teacher_tg_id)
@@ -57,9 +67,11 @@ def switch_teacher_mode_to_admin(teacher_tg_id: int) -> None:
 
 def get_assign_groups(teacher_tg_id: int) -> list[Group]:
     """
-    Функция запроса списка групп, у которых ведёт предметы преподаватель
+    Get a list of groups taught by this teacher
 
-    :param teacher_tg_id: Telegram ID преподавателя
+    :param teacher_tg_id: teacher Telegram ID
+
+    :return list[Group]: list of objects of class Group
     """
     with Session() as session:
         smt = select(Teacher).where(
@@ -70,11 +82,11 @@ def get_assign_groups(teacher_tg_id: int) -> list[Group]:
 
 def get_teacher_disciplines(teacher_tg_id: int) -> list[Discipline]:
     """
-    Функция запроса списка дисциплин, которые числятся за преподавателем
+    Get a list of disciplines assigned to a teacher
 
-    :param teacher_tg_id: Telegram ID преподавателя
+    :param teacher_tg_id: teacher Telegram ID
 
-    :return: список дисциплин
+    :return list[Discipline]: list of objects of class Discipline
     """
     with Session() as session:
         smt = select(Teacher).where(
@@ -85,9 +97,11 @@ def get_teacher_disciplines(teacher_tg_id: int) -> list[Discipline]:
 
 def get_auth_students(group_id: int) -> list[Student]:
     """
-    Возвращает список аутентифицированных студентов
+    Return the list of authenticated students
 
-    :param group_id: ID группы студента
+    :param group_id: students GROUP ID
+
+    :return list[Student]: list of objects of class Student
     """
     with Session() as session:
         students = session.query(Student).filter(

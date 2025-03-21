@@ -1,3 +1,6 @@
+"""
+Describes 'assigned_discipline' table (disciplines that students study)
+"""
 from sqlalchemy import ForeignKey, JSON
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -6,11 +9,13 @@ from database.main_db.database import Base
 
 class AssignedDiscipline(Base):
     """
-    :param discipline_id: ID присвоенной дисциплины
-    :param student_id: ID студента
-    :param point: количество баллов
-    :param home_work: выполненные работы, DisciplineHomeWorks,
-     необходимо передать в формате JSON
+    :param discipline_id: ID assigned discipline
+    :param student_id: student id
+    :param point: points scored by a student
+    :param home_work: completed works, DisciplineHomeWorks (must be JSON format)
+
+    :param student: set the connection with the 'students' table 
+        for the correct work associative table
     """
     __tablename__ = "assigned_discipline"
 

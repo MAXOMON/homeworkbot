@@ -1,13 +1,16 @@
+"""
+Contains functions for adding, reading, 
+changing and deleting data from the database, 
+intended for the administrator of this system.
+"""
 import os
-
 from sqlalchemy import delete, select
+from sqlalchemy.exc import IntegrityError
 from database.main_db.database import Session
 from database.main_db.teacher_crud import is_teacher
-from database.main_db.crud_exceptions import DisciplineNotFoundException, GroupAlreadyExistException, \
-    DisciplineAlreadyExistException, GroupNotFoundException
-
-from sqlalchemy.exc import IntegrityError
-
+from database.main_db.crud_exceptions import DisciplineNotFoundException,\
+    GroupAlreadyExistException, DisciplineAlreadyExistException,\
+    GroupNotFoundException
 from model.main_db.admin import Admin
 from model.main_db.chat import Chat
 from model.main_db.teacher import Teacher
@@ -15,21 +18,21 @@ from model.main_db.group import Group
 from model.main_db.assigned_discipline import AssignedDiscipline
 from model.main_db.discipline import Discipline
 from model.main_db.student import Student
-from utils.disciplines_utils import disciplines_works_from_json, disciplines_works_to_json, counting_tasks
-from utils.homeworks_utils import create_homeworks, homeworks_to_json
+from model.pydantic.db_start_data import DbStartData
 from model.pydantic.discipline_works import DisciplineWorksConfig
 from model.pydantic.students_group import StudentsGroup
-from model.pydantic.db_start_data import DbStartData
+from utils.disciplines_utils import disciplines_works_from_json,\
+      disciplines_works_to_json, counting_tasks
+from utils.homeworks_utils import create_homeworks, homeworks_to_json
 
 
 def is_admin_no_teacher_mode(telegram_id: int) -> bool:
     """
-    Функция проверяет, не имеет ли администратор
-    привилегии преподавателя
+    Check if this administrator has teacher functions disabled
 
-    :param telegram_id: Telegram ID пользователя
+    :param telegram_id: admin Telegram ID
 
-    :return: True, если администратор не имеет привилегии преподавателя
+    :return bool: True, if this administrator has teacher functions disabled
     """
     with Session() as session:
         admin = session.get(Admin, telegram_id)
@@ -38,15 +41,13 @@ def is_admin_no_teacher_mode(telegram_id: int) -> bool:
             return False
         return not admin.teacher_mode
 
-
 def is_admin_with_teacher_mode(telegram_id: int) -> bool:
     """
-    Функция проверяет, имеет ли администратор
-    привилегии преподавателя
+    Check if this administrator has teacher privileges
 
-    :param telegram_id: Telegram ID пользователя
+    :param telegram_id: admin Telegram ID
 
-    :return: True, если администратор имеет привилегии преподавателя
+    :return bool: True, if this administrator has teacher privileges
     """
     with Session() as session:
         admin = session.get(Admin, telegram_id)
@@ -54,75 +55,75 @@ def is_admin_with_teacher_mode(telegram_id: int) -> bool:
         if admin is None:
             return False
         return admin.teacher_mode
-    
 
 def is_admin(telegram_id: int) -> bool:
     """
-    Функция проверяет, является ли пользователь администратором
+    Check if this user is an administrator
 
-    :param telegram_id: Telegram ID пользователя
+    :param telegram_id: user Telegram ID
 
-    :return: True, если пользователь является администратором
+    :return bool: True if the user is an administrator
     """
     with Session() as session:
         admin = session.get(Admin, telegram_id)
         #admin = session.query(Admin).get(telegram_id)
         return admin is not None
 
-
 def is_admin_and_teacher(telegram_id: int) -> bool:
     """
-    Функция проверяет, является ли пользователь администратором и преподавателем
+    Check if this user is an administrator and a teacher
 
-    :param telegram_id: Telegram ID пользователя
+    :param telegram_id: user Telegram ID
 
-    :return: True, если пользователь является администратором и преподавателем
+    :return bool: True if the USER is an administrator and a teacher
     """
     _is_admin = is_admin(telegram_id)
     _is_teacher = is_teacher(telegram_id)
     return _is_admin and _is_teacher
 
-
 def add_chat(chat_id: int) -> None:
     """
-    Функция добавляет чат в базу данных
+    Add chat to database
 
-    :param chat_id: Telegram ID чата
+    :param chat_id: chat Telegram ID
+
+    :return None:
     """
     with Session() as session:
         session.add(Chat(chat_id=chat_id))
         session.commit()
 
-
 def add_teacher(full_name: str, tg_id: int) -> None:
     """
-    Функция добавляет преподавателя в базу данных
+    Add the teacher to the database
 
-    :param full_name: ФИО преподавателя
-    :param tg_id: Telegram ID преподавателя
+    :param full_name: teacher full name
+    :param tg_id: teacher Telegram ID
 
-    :return: None
+    :return None:
     """
     with Session() as session:
         session.add(Teacher(full_name=full_name, telegram_id=tg_id))
         session.commit()
 
-
 def get_teachers() -> list[Teacher]:
     """
-    Функция возвращает список преподавателей
+    Return the list of teachers
 
-    :return: Список преподавателей
+    :param None:
+
+    :return list[Teacher]: list of teachers
     """
     with Session() as session:
         return session.query(Teacher).all()
 
-
 def get_not_assign_teacher_groups(teacher_id: int) -> list[Group]:
     """
-    Функция возвращает список групп, которые не назначены преподавателю
+    Return the list of groups that are not assigned to the teacher
 
-    :param teacher_id: Telegram ID преподавателя
+    :param teacher_id: teacher Telegram ID
+
+    :return list[Group]: list of groups
     """
     with Session() as session:
         teacher = session.get(Teacher, teacher_id)
@@ -132,13 +133,14 @@ def get_not_assign_teacher_groups(teacher_id: int) -> list[Group]:
         )
         return session.scalars(query).all()
 
-
 def assign_teacher_to_group(teacher_id: int, group_id: int) -> None:
     """
-    Функция добавляет преподавателя и группу в таблицу teacher_group в базу данных
+    Assign the teacher and group to the teacher_group table in the database
 
-    :param teacher_id: Telegram ID преподавателя
-    :param group_id: Telegram ID группы
+    :param teacher_id: teacher Telegram ID
+    :param group_id: group ID
+
+    :return None:
     """
     with Session() as session:
         teacher = session.get(Teacher, teacher_id)
@@ -147,23 +149,25 @@ def assign_teacher_to_group(teacher_id: int, group_id: int) -> None:
         )
         session.commit()
 
-
 def get_all_groups() -> list[Group]:
     """
-    Функция возвращает список всех групп
+    Return the list of all groups
 
-    :return: Список всех групп
+    :param None:
+
+    :return list[Group]: List of all groups
     """
     with Session() as session:
         return session.query(Group).all()
-    
 
 def add_student(full_name: str, group_id: int) -> None:
     """
-    Функция добавляет студента в базу данных
+    Add the student to the database
 
-    :param full_name: ФИО студента
-    :param group_id: Telegram ID группы
+    :param full_name: student full name
+    :param group_id: group ID
+
+    :return None:
     """
     session = Session()
     group: Group = session.get(Group, group_id)
@@ -186,14 +190,13 @@ def add_student(full_name: str, group_id: int) -> None:
     session.commit()
     session.close()
 
-
 def add_discipline(discipline: DisciplineWorksConfig) -> None:
     """
-        Функция добавляет дисциплину в БД
+    Add discipline to the DB
 
-        :param discipline: Дисциплина
+    :param discipline: formatted data (pydantic-obj) DisciplineWorksConfig
 
-        :return: None
+    :return: None
     """
     with Session() as session:
         session.add(
@@ -210,15 +213,16 @@ def add_discipline(discipline: DisciplineWorksConfig) -> None:
         )
         session.commit()
 
-
 def add_students_group(student_groups: list[StudentsGroup]) -> None:
     """
-    Функция добавляет группы студентов
+    Add student groups
 
-    :param student_groups: Список с параментрами групп
+    :param student_groups: list formatted data (pydantic-obj) StudentsGroup
 
-    :raises DisciplineNotFoundException: Если дисциплина не найдена
-    :raises GroupAlreadyExistException: Если такая группа уже существует
+    :return None:
+
+    :raises DisciplineNotFoundException: If discipline is not found
+    :raises GroupAlreadyExistException: If such a group already exists
     """
     session = Session()
     session.begin()
@@ -259,13 +263,14 @@ def add_students_group(student_groups: list[StudentsGroup]) -> None:
     finally:
         session.close()
 
-
 def assign_teacher_to_discipline(teacher_id: int, discipline_id: int) -> None:
     """
-    Функция назначает преподавателю дисциплину
+    Assign the discipline to the teacher
 
-    :param teacher_id: Telegram ID преподавателя
-    :param discipline_id: ID дисциплины
+    :param teacher_id: teacher Telegram ID
+    :param discipline_id: discipline ID
+
+    :return None:
     """
     with Session() as session:
         teacher = session.get(Teacher, teacher_id)
@@ -274,14 +279,13 @@ def assign_teacher_to_discipline(teacher_id: int, discipline_id: int) -> None:
         )
         session.commit()
 
-
 def get_not_assign_teacher_discipline(teacher_id: int) -> list[Discipline]:
     """
-    Функция возвращает не присвоенные преподавателю дисциплины
+    Return all disciplines not assigned to the teacher
 
-    :param teacher_id: Telegram ID преподавателя
+    :param teacher_id: teacher Telegram ID
 
-    :return: Список не присвоенных преподавателю дисциплин
+    :return list[Discipline]: List of 'Discipline`s' not assigned to the teacher
     """
     with Session() as session:
         teacher = session.get(Teacher, teacher_id)
@@ -291,80 +295,82 @@ def get_not_assign_teacher_discipline(teacher_id: int) -> list[Discipline]:
         )
         return session.scalars(query).all()
 
-
 def delete_group(group_id: int) -> None:
     """
-    Функция удаляет группу из БД
+    Delete group from DB
 
-    :param group_id: ID группы
+    :param group_id: group ID
+
+    :return None:
     """
     with Session() as session:
         query = delete(Group).where(Group.id == group_id)
         session.execute(query)
         session.commit()
 
-
 def delete_student(student_id: int) -> None:
     """
-    Функция удаляет студента из БД
+    Delete student from DB
     
-    :param student_id: ID студента
+    :param student_id: student ID
+
+    :return None:
     """
     with Session() as session:
         query = delete(Student).where(Student.id == student_id)
         session.execute(query)
         session.commit()
 
-
 def delete_teacher(teacher_id: int) -> None:
     """
-    Функция удаляет преподавателя из БД
+    Remove the teacher from the database
 
-    :param teacher_id: ID преподавателя
+    :param teacher_id: teacher ID
+
+    :return None:
     """
     with Session() as session:
         query = delete(Teacher).where(Teacher.id == teacher_id)
         session.execute(query)
         session.commit()
-        
 
 def get_all_disciplines() -> list[Discipline]:
     """
-    Функция возвращает список всех дисциплин
+    Return the list of all disciplines
 
     :param: None
 
-    :return: Список дисциплин (объекты класса 'Discipline')
+    :return list[Discipline]: list of disciplines (objects of 'Discipline' - class)
     """
     with Session() as session:
         return session.query(Discipline).all()
 
-
 def get_discipline(discipline_id: int) -> Discipline:
     """
-    Функция возвращает конкретную дисциплину по ID
+    Return specific discipline by ID
 
-    :param discipline_id: ID дисциплины
+    :param discipline_id: discipline ID
 
-    :return: Объект класса 'Discipline'
+    :return Discipline: object of 'Discipline'- class
     """
     with Session() as session:
         return session.get(Discipline, discipline_id)
         #return session.query(Discipline).get(discipline_id)
 
-
 def remote_start_db_fill(data: DbStartData) -> None:
     """
-    Функция для начальной (стартовой) настройки конфигурации системы, 
-    путём загрузки json-файла, удалённо
+    Function for initial (starting) configuration of the system,
+    by loading a json file, remotely
 
-    :param data: данные по предметам, студентам, группам и преподавателям,
-    а также какие дисциплины кому назначены и какой преподаватель их ведёт
+    :param data: data on subjects, students, groups and teachers, as well 
+    as which subjects are assigned to whom and which teacher teaches them
 
-    :raises DisciplineNotFoundException: дисциплина не найдена
-    :raises DisciplineAlreadyExistException: дисциплина уже существует
-    :raises GroupAlreadyExistException: группа с таким названием уже существует
-    :raises GroupNotFoundException: группа с таким названием не найдена
+    :return None:
+
+    :raises DisciplineNotFoundException: discipline not found
+    :raises DisciplineAlreadyExistException: discipline already exists
+    :raises GroupAlreadyExistException: group with this name already exists
+    :raises GroupNotFoundException: group with this name not found
     """
     session = Session()  # создаём объект сессии
     session.begin()  # начинаем транзакцию
@@ -473,9 +479,11 @@ def remote_start_db_fill(data: DbStartData) -> None:
 
 def switch_admin_mode_to_teacher(admin_id: int) -> None:
     """
-    Переключение режима администратора в режим преподавателя
+    Switching admin mode to teacher mode in telegram chat menu
     
-    :param admin_id: Telegram ID преподавателя
+    :param admin_id: teacher Telegram ID
+
+    :return None:
     """
     with Session() as session:
         admin = session.get(Admin, admin_id)

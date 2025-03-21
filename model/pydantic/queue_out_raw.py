@@ -1,10 +1,11 @@
+"""Contains the data structure for the queue database output table"""
 from pydantic import BaseModel
 
 
 class TaskResult(BaseModel):
     """
-    Класс, хранящий данные о результате тестирования задания
-    в рамках л/р или д/р, а также пояснения при проваленных тестах
+    A class that stores data about the result of testing a task within 
+    a lab or homework assignment, as well as explanations for failed tests
     """
     task_id: int
     file_name: str
@@ -13,10 +14,10 @@ class TaskResult(BaseModel):
 
 class TestResult(BaseModel):
     """
-    Класс, хранящий данные о результатах ответов, которые
-    успешно прошли тестирование или завалились в процессе.
-    Его экземпляр передаётся из подсистемы проверки к боту
-    через промежуточную базу данных
+    A class that stores data on the results of responses that 
+    have successfully passed testing or failed during the process.
+    Its instance is passed from the verification subsystem to the bot
+    via an intermediate database
     """
     discipline_id: int
     lab_number: int

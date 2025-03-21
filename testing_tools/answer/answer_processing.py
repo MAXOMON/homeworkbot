@@ -55,7 +55,8 @@ class AnswerProcessing:
 
     async def __processing_records(self, records: list[QueueOut]) -> None:
         """
-        Метод подготовки и отправки ответа по результатам проверки заданий работы
+        Метод подготовки и отправки ответа 
+        по результатам проверки заданий работы
 
         :param records: записи результатов
 
@@ -65,8 +66,10 @@ class AnswerProcessing:
             test_result = TestResult(**json.loads(record.data))
             text = '<i>Результат тестирования:</i>\n'
 
-            test_result.successful_task.sort(key=lambda x: _get_lab_number(x.file_name))
-            test_result.failed_task.sort(key=lambda x: _get_lab_number(x.file_name))
+            test_result.successful_task.sort(
+                key=lambda x: _get_lab_number(x.file_name))
+            test_result.failed_task.sort(
+                key=lambda x: _get_lab_number(x.file_name))
             for it in test_result.successful_task:
                 text += f'<b>✅ {it.file_name}</b>\n'
             for it in test_result.failed_task:

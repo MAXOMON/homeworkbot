@@ -1,10 +1,15 @@
+"""
+This module contains functionality for compiling various reports 
+(Full/Final/Brief) for groups of students, according to selected disciplines.
+"""
 import asyncio
 import pathlib
-from telebot.types import CallbackQuery, InlineKeyboardMarkup, InlineKeyboardButton, InputFile
-
+from telebot.types import CallbackQuery, InlineKeyboardMarkup,\
+    InlineKeyboardButton, InputFile
 from database.main_db import admin_crud, common_crud, teacher_crud
 from mrhomebot.configuration import bot
-from reports.run_report_builder import ReportBuilderTypeEnum, run_report_builder
+from reports.run_report_builder import ReportBuilderTypeEnum,\
+    run_report_builder
 
 
 __report_prefix = [
@@ -16,13 +21,11 @@ __report_prefix = [
     'shortGrReport_'
 ]
 
-
 __next_step = {
     'fullReport': 'fullGrReport',
     'finishReport': 'finishGrReport',
     'shortReport': 'shortGrReport'
 }
-
 
 __reports_builder_type = {
     'fullGrReport': ReportBuilderTypeEnum.FULL,
@@ -30,16 +33,34 @@ __reports_builder_type = {
     'shortGrReport': ReportBuilderTypeEnum.SHORT
 }
 
-
 def __is_download_prefix_callback(data: str) -> bool:
+    """
+    Check if the transmitted data contains a prefix for receiving a report!
+
+    :param data: is the object of the call, in the Telegram API, 
+        generated when the administrator clicks on 
+        the button in the Telegram bot chat.
+
+    :return bool: True IF this is the report prefix ELSE False
+    """
     for it in __report_prefix:
         if it in data:
             return True
     return False
 
-
-@bot.callback_query_handler(func=lambda call: __is_download_prefix_callback(call.data))
+@bot.callback_query_handler(
+        func=lambda call: __is_download_prefix_callback(call.data)
+        )
 async def callback_download_full_report(call: CallbackQuery):
+    """
+    Pass the collected necessary information about the groups 
+    and their disciplines for which a report needs to be generated 
+    to the next report generation function.
+
+    :param call: an object that extends the standard message. 
+        It contains information about what report needs to be generated, 
+        the selected group and discipline.
+    """
     type_callback = call.data.split("_")[0]
     match type_callback:
         case 'fullReport' | 'finishReport' | 'shortReport':
@@ -69,7 +90,8 @@ async def callback_download_full_report(call: CallbackQuery):
                     *[
                         InlineKeyboardButton(
                             it.short_name,
-                            callback_data=f"{__next_step[type_callback]}_{group_id}_{it.id}"
+                            callback_data=f"{__next_step[type_callback]}_\
+                                {group_id}_{it.id}"
                         ) for it in disciplines
                     ]
                 )
@@ -97,7 +119,7 @@ async def callback_download_full_report(call: CallbackQuery):
                 )
         case _:
             await bot.edit_message_text(
-                f"Неизвестный формат для обработки данных",
+                "Неизвестный формат для обработки данных",
                 call.message.chat.id,
                 call.message.id
             )
@@ -108,12 +130,13 @@ async def __create_report(
         discipline_id: int,
         builder_type: ReportBuilderTypeEnum) -> None:
     """
-    Функция запуска формирования отчёта в отдельном потоке
+    Run the report generation function in a separate thread.
 
-    :param call: CallbackQuery для отправки отчёта и редактирования сообщений в чате
-    :param group_id: id группы по которой формируется отчёт
-    :param discipline_id: id дисциплины по которой формируется отчёт
-    :param builder_type: тип формируемого отчёта
+    :param call: CallbackQuery for sending report and editing messages in chat
+    :param group_id: ID of the group for which the report is generated
+    :param discipline_id: ID of the discipline 
+        for which the report is generated
+    :param builder_type: type of report being generated
     """
     await bot.edit_message_text(
         "Начинаем формировать отчёт",
@@ -121,7 +144,10 @@ async def __create_report(
         call.message.id
     )
     path_to_report = await asyncio.gather(
-        asyncio.to_thread(run_report_builder, group_id, discipline_id, builder_type)
+        asyncio.to_thread(
+            run_report_builder,
+            group_id, discipline_id,
+            builder_type)
     )
     await bot.edit_message_text(
         "Отчёт успешно сформирован",

@@ -1,9 +1,16 @@
+"""
+Describes the 'admin' table - bot administrators
+"""
 from sqlalchemy.orm import mapped_column, Mapped
 
 from database.main_db.database import Base
 
 
 class Admin(Base):
+    """
+    :param telegram_id: Telegram_ID admin
+    :param teacher_mode: access to teacher functions IF TRUE
+    """
     __tablename__ = "admin"
 
     telegram_id: Mapped[int] = mapped_column(primary_key=True)

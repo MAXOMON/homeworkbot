@@ -1,10 +1,15 @@
+"""
+Contains functions for adding, reading, 
+changing and deleting data from the database,
+intended for the normal purposes of this system
+"""
+import json
+from datetime import datetime
 from enum import Enum
 from sqlalchemy import exists, and_, select, delete
 from sqlalchemy.orm import joinedload, selectinload
-
-from database.main_db.database import Session
 from database.main_db import admin_crud
-
+from database.main_db.database import Session
 from model.main_db.admin import Admin
 from model.main_db.student import Student
 from model.main_db.teacher import Teacher
@@ -14,18 +19,14 @@ from model.main_db.group import Group
 from model.main_db.assigned_discipline import AssignedDiscipline
 from model.main_db.discipline import Discipline
 from model.main_db.student_ban import StudentBan
-
-import json
-from datetime import datetime
-
-import utils.homeworks_utils as utils
-
 from model.pydantic.queue_in_raw import QueueInRaw
 from model.queue_db.queue_in import QueueIn
 from testing_tools.logger.report_model import LabReport
+import utils.homeworks_utils as utils
 
 
 class UserEnum(Enum):
+    """For simplified user classification and verification"""
     Admin = 0
     Teacher = 1
     Student = 2
@@ -33,6 +34,13 @@ class UserEnum(Enum):
 
 
 def user_verification(telegram_id: int) -> UserEnum:
+    """
+    Check who this user is
+
+    :param telegram_id: user Telegram ID
+
+    :return UserEnum: value represented by the UserEnum class (Enum)
+    """
     with Session() as session:
         user = session.query(Admin).get(telegram_id)
         if user is not None:
@@ -47,23 +55,40 @@ def user_verification(telegram_id: int) -> UserEnum:
         ).first()
         if user is not None:
             return UserEnum.Student
-    return UserEnum.Unknown
+        return UserEnum.Unknown
 
 def get_chats() -> list[int]:
+    """
+    Return the list of chats in which the bot will be available
+
+    :param None:
+
+    :return list[int]: list of chats from DB in integer list format
+    
+    """
     with Session() as session:
         chats = session.query(Chat).all()
         return [it.chat_id for it in chats]
 
 def get_group_disciplines(group_id: int) -> list[Discipline]:
+    """
+    Return all disciplines of the selected group
+
+    :param group_id: group ID from DB
+
+    :return list[Discipline]: list of all disciplines assigned to the selected
+        group from the database, 
+        in the format of a list of objects of the Discipline class
+    """
     with Session() as session:
         group = session.get(Group, group_id)
         return group.disciplines
 
 def ban_student(telegram_id: int) -> None:
     """
-    Функция для записи идентификатора студента в бан-лист
+    Ban this student
     
-    :param telegram_id: Telegram ID студента
+    :param telegram_id: student Telegram ID
 
     :return: None
     """
@@ -73,9 +98,11 @@ def ban_student(telegram_id: int) -> None:
 
 def unban_student(telegram_id: int) -> None:
     """
-    Функция для удаления идентификатора студента из бан-листа
+    Remove this student from the ban list
 
-    :param telegram_id: Telegram ID студента
+    :param telegram_id: student Telegram ID
+
+    :return None:
     """
     with Session() as session:
         query = delete(StudentBan).where(StudentBan.telegram_id == telegram_id)
@@ -84,11 +111,11 @@ def unban_student(telegram_id: int) -> None:
 
 def is_ban(telegram_id: int) -> bool:
     """
-    Функция проверяет наличие студента в бан-листе
+    Check if this student is on the ban list
 
-    :param telegram_id: Telegram ID студента
+    :param telegram_id: student Telegram ID
 
-    :return: True, если студент в бан-листе, иначе False
+    :return bool: True IF student is banned ELSE False
     """
     with Session() as session:
         tg_id = session.get(StudentBan, telegram_id)
@@ -96,13 +123,13 @@ def is_ban(telegram_id: int) -> bool:
 
 def get_ban_students(teacher_telegram_id: int) -> list[Student]:
     """
-    Функция запроса списка забаненных студентов в группах, где
-    ведёт конкретный преподаватель или всех студентов, если 
-    запрос проводится в режиме администратора
+    Return all banned students of the selected teacher.
+    Request is executed by administrator.
 
-    :param teacher_telegram_id: Telegram ID преподавателя/администратора
+    :param teacher_telegram_id: teacher Telegram ID
 
-    :return: список забаненных студентов
+    :return list[Student]: list of banned students from group selected teacher
+        from database in the format list of objects of the class Student
     """
     with Session() as session:
         if admin_crud.is_admin_no_teacher_mode(teacher_telegram_id):
@@ -129,14 +156,17 @@ def get_ban_students(teacher_telegram_id: int) -> list[Student]:
 
 def get_students_from_group_for_ban(group_id: int) -> list[Student]:
     """
-    Функция запроса студентов группы, которых можно забанить
+    Return the all students from group, available for ban.
 
-    :param group_id: идентификатор группы
+    :param group_id: group ID from DB
 
-    :return: список студентов
+    :return list[Student]: list of students from group, available for ban
+        from database in the format list of objects of the class Student
     """
     with Session() as session:
-        students = session.query(Student).options(joinedload(Student.group)).filter(
+        students = session.query(
+            Student
+            ).options(joinedload(Student.group)).filter(
             and_(
                 Student.group_id == group_id,
                 Student.telegram_id.is_not(None),
@@ -147,11 +177,12 @@ def get_students_from_group_for_ban(group_id: int) -> list[Student]:
 
 def get_students_from_group(group_id: int) -> list[Student]:
     """
-    Функция возвращает список студентов из конкретной группы
+    Return all students in this group
 
-    :param group_id: идентификатор группы
+    :param group_id: group ID from DB
 
-    :return: список студентов
+    :return list[Student]: list of students from group 
+        from a database in the format list of objects of the class Student
     """
     with Session() as session:
         #students = session.query(Student).where(
@@ -172,16 +203,43 @@ def get_students_from_group(group_id: int) -> list[Student]:
         return group.students
 
 def get_group(group_id: int) -> Group:
+    """
+    Return group from database
+
+    :param group_id: group ID from DB
+
+    :return Group: group record from the database in the
+        format of the Group class object
+    """
     with Session() as session:
         result = session.query(Group).get(group_id)
         return result
 
 def get_discipline(discipline_id: int) -> Discipline:
+    """
+    Return the discipline from database
+
+    :param discipline_id: discipline ID from DB
+
+    :return Discipline: discipline record from the database in the
+        format of the Discipline class object
+    """
     with Session() as session:
         result = session.query(Discipline).get(discipline_id)
         return result
 
-def get_student_discipline_answer(student_id: int, discipline_id: int) -> AssignedDiscipline:
+def get_student_discipline_answer(
+        student_id: int, discipline_id: int
+        ) -> AssignedDiscipline:
+    """
+    Return the discipline assigned to the student
+
+    :param student_id: student ID from DB
+    :param discipline_id: discipline ID from DB
+
+    :return AssignedDiscipline: assigned_discipline record from the database
+        in the format of the AssignedDiscipline class object
+    """
     with Session() as session:
         answers = session.query(AssignedDiscipline).filter(
             AssignedDiscipline.discipline_id == discipline_id,
@@ -190,17 +248,28 @@ def get_student_discipline_answer(student_id: int, discipline_id: int) -> Assign
         return answers
 
 def get_student_from_id(student_id: int) -> Student:
+    """
+    Return the student by his ID
+    
+    :param student_id: student ID on DB
+    
+    :return Student: student record from the database 
+        in the format of the Student class object
+    """
     with Session() as session:
         return session.query(Student).get(student_id)
 
 def write_test_result(lab_report: LabReport, input_record: QueueIn) -> None:
     """
-    Функция записи результата тестирования заданий из л/р или домашней работы
-    с расчетом заработанных баллов по выполнению работы. Если успевает до 
-    дедлайнов, то всё хорошо. Иначе баллы срезаются в 2 раза.
+    Record the test results.
 
-    :param lab_report: отчет по результатам тестирования заданий работы
-    :param input_record: исходные данные, отправляемые на тестирование
+    IF the work is submitted on time, 
+    then a full score is recorded ELSE result / 2
+
+    :param lab_report: report on the results of testing the tasks of the work
+    :param input_record: source data sent for testing
+
+    :return None:
     """
     session = Session()
     task_raw = QueueInRaw(**json.loads(input_record.data))
@@ -243,10 +312,12 @@ def write_test_result(lab_report: LabReport, input_record: QueueIn) -> None:
         if lab.deadline < end_time.date():
             too_slow = True
 
-        discipline = session.query(Discipline).get(assig_discipline.discipline_id)
+        discipline = session.query(
+            Discipline
+            ).get(assig_discipline.discipline_id)
 
         scale_point = 100.0 / discipline.max_tasks
-        lab_points = (task_done * scale_point)
+        lab_points = task_done * scale_point
         if too_slow:
             lab_points *= 0.5
 

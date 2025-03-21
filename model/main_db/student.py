@@ -1,13 +1,22 @@
+"""Describes 'students' table - students in this system"""
 from dataclasses import dataclass
 from typing import List
-
 from sqlalchemy import String, ForeignKey
 from sqlalchemy.orm import Mapped, mapped_column, relationship
-
 from database.main_db.database import Base
 
 
 class Student(Base):
+    """
+    :param full_name: Full name of the student
+    :param group_id: group id to where the student is assigned
+    :param telegram_id: student Telegram ID
+
+    :param group: set the connection with the 'groups' table 
+        for the correct work associative table
+    :param homeworks: set the connection with the 'assigned_discipline' table 
+        for the correct work associative table
+    """
     __tablename__ = "students"
 
     id: Mapped[int] = mapped_column(primary_key=True)
@@ -33,4 +42,10 @@ class Student(Base):
 
 @dataclass
 class StudentRaw:
+    """
+    For simplified data processing in 
+    first_run_configurator, module database.main_db...
+    
+    :param full_name: student full name
+    """
     full_name: str

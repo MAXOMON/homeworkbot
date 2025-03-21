@@ -1,10 +1,19 @@
+"""
+Contains an output intermediate table with output data:
+results of checking the student's homework/laboratory work
+"""
 from sqlalchemy import JSON
 from sqlalchemy.orm import mapped_column, Mapped
-
 from database.queue_db.database import Base
 
 
 class QueueOut(Base):
+    """
+    :param telegram_id: user Telegram ID, eg message.from_user.id
+    :param chat_id: chat ID, eg message.chat.id
+    :param data: test result with data 
+        on successful/unsuccessful laboratory works
+    """
     __tablename__ = "output"
 
     id: Mapped[int] = mapped_column(primary_key=True)

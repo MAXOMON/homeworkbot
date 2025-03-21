@@ -1,9 +1,10 @@
+"""These policies are used directly in the student lab testing system"""
 from pydantic import BaseModel
 
 
 class TestLocalSettings(BaseModel):
     """
-    Локальные политики конкретной задачи
+    Local policies for a specific task
     """
     lab_number: int
     prohibition: list[str] | None  #  запрет
@@ -13,7 +14,7 @@ class TestLocalSettings(BaseModel):
 
 class TestGlobalSettings(BaseModel):
     """
-    Глобальные политики всей лабораторной (домашней) работы
+    Global policies for all lab (homework) work
     """
     prohibition: list[str] | None  # запрет
     restriction: list[str] | None  # ограничение
@@ -21,8 +22,8 @@ class TestGlobalSettings(BaseModel):
 
 class TestSettings(BaseModel):
     """
-    Агрегация политик лабораторной (домашней) работы
-    с зависимостями от внешних пакетов
+    Contains policies for lab (homework) work
+    with dependencies on external packages
     """
     dependencies: list[str] | None  # зависимости
     global_level: TestGlobalSettings

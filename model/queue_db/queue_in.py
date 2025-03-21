@@ -1,10 +1,18 @@
+"""
+Contains an input intermediate table with data 
+for the incoming data (homework/lab) from the student
+"""
 from sqlalchemy import JSON
 from sqlalchemy.orm import mapped_column, Mapped
-
 from database.queue_db.database import Base
 
 
 class QueueIn(Base):
+    """
+    :param telegram_id: user Telegram ID, eg message.from_user.id
+    :param chat_id: chat ID, eg message.chat.id
+    :param data: student answers
+    """
     __tablename__ = "input"
 
     id: Mapped[int] = mapped_column(primary_key=True)

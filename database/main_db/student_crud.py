@@ -1,3 +1,6 @@
+"""
+This module contains various checking functions that are specific to students.
+"""
 from database.main_db.database import Session
 
 from model.main_db.student import Student
@@ -6,6 +9,13 @@ from model.main_db.discipline import Discipline
 
 
 def has_student(full_name: str) -> bool:
+    """
+    Check if a student already exists in the database.
+
+    :param full_name: student Telegram ID
+
+    :return bool: True IF already exists ELSE False
+    """
     with Session() as session:
         student = session.query(Student).filter(
             Student.full_name.ilike(f"%{full_name}%")
@@ -13,6 +23,13 @@ def has_student(full_name: str) -> bool:
         return student is not None
 
 def is_student(telegram_id: int) -> bool:
+    """
+    Check if the user is a student.
+
+    :param telegram_id: user Telegram ID
+
+    :return bool: True IF user a student ELSE False
+    """
     with Session() as session:
         student = session.query(Student).filter(
             Student.telegram_id == telegram_id
@@ -20,6 +37,14 @@ def is_student(telegram_id: int) -> bool:
         return student is not None
 
 def set_telegram_id(full_name: str, telegram_id: int) -> None:
+    """
+    Set this telegram ID for this student
+
+    :param full_name: student full name
+    :param telegram_id: student Telegram ID
+
+    :return None:
+    """
     with Session() as session:
         session.query(Student).filter(
             Student.full_name.ilike(f"%{full_name}%")
@@ -30,11 +55,11 @@ def set_telegram_id(full_name: str, telegram_id: int) -> None:
 
 def get_student_by_tg_id(telegram_id: int) -> Student:
     """
-    Функция запроса студента по Telegram ID
+    Return the Student object by his telegram ID
 
-    :param telegram_id: Telegram ID студента
+    :param telegram_id: student Telegram ID
 
-    :return: объект класса Student
+    :return: object of class Student
     """
     with Session() as session:
         student = session.query(Student).filter(
@@ -44,11 +69,11 @@ def get_student_by_tg_id(telegram_id: int) -> Student:
 
 def get_assign_disciplines(student_tg_id: int) -> list[Discipline]:
     """
-    Функция запрашивает все дисциплины, закреплённые за студентом
+    Get all the disciplines assigned to the student.
 
-    :param student_tg_id: Telegram ID студента
+    :param student_tg_id: student Telegram ID
 
-    :return: список оъектов класса Discipline
+    :return list[Discipline]: list of objects of class Discipline
     """
     with Session() as session:
         student = session.query(Student).filter(

@@ -1,27 +1,37 @@
+"""
+This module contains all the necessary functionality 
+to display the administrator's admin menu in the Telegram bot chat.
+"""
 from enum import Enum, auto
-
 from telebot.types import KeyboardButton, ReplyKeyboardMarkup, Message
-
 from database.main_db import admin_crud
 from mrhomebot import bot
 from mrhomebot.admin_handlers.add_chat import _handle_add_chat
 from mrhomebot.admin_handlers.add_teacher import _handle_add_teacher
-from mrhomebot.admin_handlers.utils import create_teachers_button, create_groups_button, create_discipline_button
+from mrhomebot.admin_handlers.utils import create_teachers_button,\
+    create_groups_button, create_discipline_button
 from mrhomebot.admin_handlers.add_student import _handle_add_student
 from mrhomebot.admin_handlers.add_discipline import _handle_add_discipline
-from mrhomebot.admin_handlers.add_students_group import _handle_add_students_group
+from mrhomebot.admin_handlers.add_students_group \
+    import _handle_add_students_group
 from mrhomebot.admin_handlers.unban_student import create_unban_student_buttons
 from mrhomebot.admin_handlers.upload_tests import _handle_upload_tests
-from mrhomebot.admin_handlers.upload_start_configuration import _handle_upload_start_configuration
-from mrhomebot.admin_handlers.download_all_test_and_answer import _handle_download_all_test_and_answer
+from mrhomebot.admin_handlers.upload_start_configuration \
+    import _handle_upload_start_configuration
+from mrhomebot.admin_handlers.download_all_test_and_answer \
+    import _handle_download_all_test_and_answer
 from mrhomebot.teacher_handlers.teacher_menu import create_teacher_keyboard
 
 
 class AdminException(Exception):
-    ...
+    """Exception raised in admin menu"""
 
 
 class AdminCommand(Enum):
+    """
+    Contains constants required for more convenient use 
+    in the functions for creating and processing the admin menu
+    """
     ADD_GROUP = auto()
     ADD_TEACHER = auto()
     ADD_STUDENT = auto()
@@ -74,6 +84,13 @@ __admin_commands = {
 
 
 def first_admin_keyboard(message: Message) -> ReplyKeyboardMarkup:
+    """
+    the first list of the admin menu, 
+    which will be displayed to the administrator in the telegram bot chat.
+
+    :param message: the object containing information about
+        an incoming message from the user.
+    """
     markup = ReplyKeyboardMarkup(row_width=3)
     markup.add(
         KeyboardButton(__admin_commands[AdminCommand.ADD_TEACHER]),
@@ -97,6 +114,13 @@ def first_admin_keyboard(message: Message) -> ReplyKeyboardMarkup:
 
 
 def second_admin_keyboard(message: Message | None = None) -> ReplyKeyboardMarkup:
+    """
+    the second list of the admin menu, 
+    which will be displayed to the administrator in the telegram bot chat.
+
+    :param message: the object containing information about
+        an incoming message from the user.
+    """
     markup = ReplyKeyboardMarkup(row_width=3)
     markup.add(
         KeyboardButton(__admin_commands[AdminCommand.DOWNLOAD_ANSWER]),
@@ -119,6 +143,13 @@ def second_admin_keyboard(message: Message | None = None) -> ReplyKeyboardMarkup
 
 
 def third_admin_keyboard(message: Message | None = None) -> ReplyKeyboardMarkup:
+    """
+    the third list of the admin menu, 
+    which will be displayed to the administrator in the telegram bot chat.
+
+    :param message: the object containing information about
+        an incoming message from the user.
+    """
     markup = ReplyKeyboardMarkup(row_width=3)
     markup.add(
         KeyboardButton(__admin_commands[AdminCommand.DELETE_GROUP]),
@@ -135,12 +166,25 @@ def third_admin_keyboard(message: Message | None = None) -> ReplyKeyboardMarkup:
     return markup
 
 def is_admin_command(command: str) -> bool:
+    """
+    Checks if the command is in the allowed list.
+
+    :param command: a command sent by a user to a chat with a telegram bot 
+        with admin status, for example /addstudent
+    """
     for _, value in __admin_commands.items():
         if value == command:
             return True
     return False
 
 def get_current_admin_command(command: str) -> AdminCommand:
+    """
+    Return the name of the menu button if there is one 
+    in the list of admin menu commands
+
+    :param command: a command sent by a user to a chat with a telegram bot 
+        with admin status, for example /addstudent
+    """
     for key, value in __admin_commands.items():
         if value == command:
             return key
@@ -154,6 +198,12 @@ __menu_list = [
 ]
 
 async def switch_admin_to_teacher_menu(message: Message):
+    """
+    Switch from admin menu to teacher menu
+
+    :param message: the object containing information about
+        an incoming message from the user.
+    """
     await bot.send_message(
         message.chat.id,
         "Переключение в режим преподавателя",
@@ -162,8 +212,15 @@ async def switch_admin_to_teacher_menu(message: Message):
         reply_markup=create_teacher_keyboard(message)
     )
 
-@bot.message_handler(is_admin=True, func=lambda message: is_admin_command(message.text))
+@bot.message_handler(is_admin=True,
+                     func=lambda message: is_admin_command(message.text))
 async def handle_commands(message: Message):
+    """
+    Call the function according to the command passed by the administrator.
+
+    :param message: the object containing information about
+        an incoming message from the user.
+    """
     command = get_current_admin_command(message.text)
     match command:
         case AdminCommand.ADD_CHAT:
