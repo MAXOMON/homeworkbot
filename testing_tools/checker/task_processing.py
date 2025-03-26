@@ -1,44 +1,52 @@
+"""
+This model contains a system for checking 
+answers directly from the student
+"""
 import asyncio
 import json
 from pathlib import Path
-
 from database.main_db import common_crud
 from database.queue_db import queue_in_crud, rejected_crud, queue_out_crud
-
 from model.pydantic.queue_in_raw import QueueInRaw
 from model.pydantic.queue_out_raw import TaskResult, TestResult
 from model.pydantic.test_rejected_files import TestRejectedFiles, RejectedType
 from model.queue_db.queue_in import QueueIn
-
 from testing_tools.checker.docker_builder import DockerBuilder
 from testing_tools.checker.folder_builder import FolderBuilder
 from testing_tools.checker.keywords_controller import KeyWordsController
-from testing_tools.logger.report_model import LabReport
+from testing_tools.logger.report_model import LabReport, LabReportException
 
 
 class TaskProcessing:
-    """
-    Главный класс подсистемы проверки
-    """
+    """Main class of the verification subsystem"""
     def __init__(
             self,
             temp_folder_path: Path,
             docker_amount_restriction: int = 1):
         """
-        :param temp_folder: путь до временной директории, где будут формироваться
-        каталоги для создания docker-контейнеров
-        :param docker_amount_restriction: ограничение на количество одновременно
-        работающих контейнеров
+        :param temp_folder: path to the temporary directory 
+            where directories for creating docker containers will be formed
+        :param docker_amount_restriction: limit on the number 
+            of simultaneously running containers
         """
         self.temp_folder_path = temp_folder_path
         self.docker_amount_restriction = docker_amount_restriction
 
     async def run(self):
+        """
+        Run creating task groups according to the allowed number 
+        of containers to be launched at a time.
+        """
         async with asyncio.TaskGroup() as tg:
             for _ in range(self.docker_amount_restriction):
                 tg.create_task(self.__task_processing())
 
     async def __task_processing(self):
+        """
+        Take the first record from the input table of the intermediate DB 
+        and send it for verification in a separate docker container, 
+        in a separate thread.
+        """
         while True:
             await asyncio.sleep(2)
             if queue_in_crud.is_not_empty():
@@ -54,11 +62,12 @@ class TaskProcessing:
 
 def _run_prepare_docker(record: QueueIn, temp_folder_path: Path) -> None:
     """
-    Функция подготовки файлов для контейнера и его последующего запуска
+    The function of preparing files for a container and its subsequent launch
 
-    :param record: запись из промежуточной БД, с данными по загруженным ответам студента
-    :param temp_folder_path: путь до временной директории, где будут формироваться
-        каталоги для создания docker-контейнеров
+    :param record: record from the intermediate database, 
+        with data on the student's uploaded answers
+    :param temp_folder_path: path to the temporary directory where directories
+        for creating docker containers will be formed
     """
     folder_builder = FolderBuilder(temp_folder_path, record)
     docker_folder_path = folder_builder.build()
@@ -68,7 +77,8 @@ def _run_prepare_docker(record: QueueIn, temp_folder_path: Path) -> None:
             record.chat_id,
             TestRejectedFiles(
                 type=RejectedType.TemplateError,
-                description='Имя файла(-ов) не соответствует шаблону для тестирования',
+                description='Имя файла(-ов) не соответствует \
+                    шаблону для тестирования',
                 files=folder_builder.get_rejected_file_names()
             )
         )
@@ -83,7 +93,8 @@ def _run_prepare_docker(record: QueueIn, temp_folder_path: Path) -> None:
             record.chat_id,
             TestRejectedFiles(
                 type=RejectedType.KeyWordsError,
-                description="В файле(-ах) имеются запрещенные ключевые слова, " +
+                description="В файле(-ах) имеются запрещенные \
+                    ключевые слова, " +
                     "либо не используются необходимые для решения задачи",
                 files=keywords_controller.get_rejected_file_names()
             )
@@ -108,7 +119,7 @@ def _run_prepare_docker(record: QueueIn, temp_folder_path: Path) -> None:
     result = docker_builder.get_run_result()
     try:
         lab_report = LabReport(**json.loads(result))
-    except:
+    except LabReportException:
         print("Произошла ошибка, при чтении docker.logs(output)")
 
     common_crud.write_test_result(lab_report, record)
@@ -117,12 +128,12 @@ def _run_prepare_docker(record: QueueIn, temp_folder_path: Path) -> None:
 
 def _send_test_result_to_bot(lab_report: LabReport, record: QueueIn) -> None:
     """
-    Функция отправки в промежуточную БД результата тестирования
+    Function of sending the test result to the intermediate database
 
-    :param lab_report: структура данных с результатами работы контейнера,
-        в котором запускалось тестирование
-    :param record: запись из промежуточной БД,
-        с данными по загруженным ответам студента
+    :param lab_report: data structure with the results of the container 
+        in which the testing was run
+    :param record: record from the intermediate database, 
+        with data on the student's uploaded answers
     """
     straw = QueueInRaw(**json.loads(record.data))
     result_report = TestResult(

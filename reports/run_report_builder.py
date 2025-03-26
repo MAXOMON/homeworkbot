@@ -1,5 +1,8 @@
+"""
+This module launches the Academic Performance Report Builder,
+depending on the selected report type.
+"""
 from enum import Enum
-
 from reports.base_report_builder import BaseReportBuilder
 from reports.finish_report_builder import FinishReportBuilder
 from reports.full_report_builder import FullReportBuilder
@@ -7,6 +10,7 @@ from reports.short_report_builder import ShortReportBuilder
 
 
 class ReportBuilderTypeEnum(Enum):
+    """The required type of report to be generated"""
     FINISH = 1
     FULL = 2
     SHORT = 3
@@ -17,13 +21,13 @@ def run_report_builder(
         discipline_id: int,
         builder_type: ReportBuilderTypeEnum) -> str:
     """
-    Функция запуска формирования файлового отчёта
+    Start generating file report
 
-    :param group_id: идентификатор группы
-    :param discipline_id: идентификатор дисциплины
-    :param builder_type: тип формируемого отчёта (FINISH, FULL, SHORT)
+    :param group_id: group id
+    :param discipline_id: discipline id
+    :param builder_type: type of report being generated (FINISH, FULL, SHORT)
 
-    :return: путь до сформированного отчёта
+    :return str: path to the generated report
     """
     report_builder: BaseReportBuilder | None = None
     match builder_type:

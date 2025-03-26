@@ -1,20 +1,20 @@
+"""
+The module contains the main class and functionality 
+for building various reports (academic performance).
+"""
 import json
 import os
 from datetime import datetime
 from enum import IntEnum
 from pathlib import Path
-
 from openpyxl.styles import PatternFill
 from openpyxl.workbook import Workbook
-
 from database.main_db import common_crud
 from model.pydantic.home_work import DisciplineHomeWorks
 
 
 class ReportFieldEnum(IntEnum):
-    """
-    Номер столбца отчёта в формируемом файле
-    """
+    """The report column number in the generated file"""
     STUDENT_NAME = 1
     POINTS = 2
     LAB_COMPLETED = 3
@@ -25,19 +25,26 @@ class ReportFieldEnum(IntEnum):
 
 
 class BaseReportBuilder:
-    """
-    Базовый класс, закладывающий каркас отчёта
-    """
-    RED_FILL = PatternFill(start_color='FF0000', end_color='FF0000', fill_type='solid')
-    GREEN_FILL = PatternFill(start_color='006633', end_color='006633', fill_type='solid')
+    """Base class that lays the framework of the report"""
+    RED_FILL = PatternFill(
+        start_color='FF0000',
+        end_color='FF0000',
+        fill_type='solid')
+    GREEN_FILL = PatternFill(
+        start_color='006633',
+        end_color='006633',
+        fill_type='solid')
 
-    def __init__(self, group_id: int, discipline_id: int, prefix_file: str, extension: str='xlsx'):
+    def __init__(self,
+                 group_id: int,
+                 discipline_id: int,
+                 prefix_file: str,
+                 extension: str='xlsx'):
         """
-        :param group_id: идентификатор группы
-        :param discipline_id: идентификатор дисциплины
-        :param prefix_file: префикс имени формируемого отчёта
-        :param extension: расширение файла отчёта
-        :return:
+        :param group_id: group id
+        :param discipline_id: discipline id
+        :param prefix_file: prefix of the name of the generated report
+        :param extension: report file extension
         """
         self.group_id = group_id
         self.discipline_id = discipline_id
@@ -57,7 +64,7 @@ class BaseReportBuilder:
 
     def build_report(self) -> None:
         """
-        Метод, запускающий создание и заполнение базового отчёта
+        start creating and filling a basic report
         
         :return: None
         """
@@ -67,19 +74,39 @@ class BaseReportBuilder:
         students = common_crud.get_students_from_group(self.group_id)
         row = 1
         for student in students:
-            answers = common_crud.get_student_discipline_answer(student.id, self.discipline_id)
-            home_works = DisciplineHomeWorks(**json.loads(answers.home_work)).home_works
+            answers = common_crud.get_student_discipline_answer(
+                student.id,
+                self.discipline_id)
+            home_works = DisciplineHomeWorks(
+                **json.loads(answers.home_work)
+                ).home_works
             if row == 1:
-                worksheet.cell(row=row, column=ReportFieldEnum.STUDENT_NAME).value = "ФИО студента"
-                worksheet.cell(row=row, column=ReportFieldEnum.POINTS).value = "Баллы (макс. 100)"
-                worksheet.cell(row=row, column=ReportFieldEnum.LAB_COMPLETED).value = "Полностью выполненых лаб"
-                worksheet.cell(row=row, column=ReportFieldEnum.DEADLINES_FAILS).value = "Кол-во сорванных сроков сдачи"
-                worksheet.cell(row=row, column=ReportFieldEnum.TASKS_COMPLETED).value = "Кол-во выполненных задач"
-                worksheet.cell(row=row, column=ReportFieldEnum.TASK_RATIO).value = "Объём выполненных задач"
+                worksheet.cell(row=row,
+                               column=ReportFieldEnum.STUDENT_NAME
+                               ).value = "ФИО студента"
+                worksheet.cell(row=row,
+                               column=ReportFieldEnum.POINTS
+                               ).value = "Баллы (макс. 100)"
+                worksheet.cell(row=row,
+                               column=ReportFieldEnum.LAB_COMPLETED
+                               ).value = "Полностью выполненых лаб"
+                worksheet.cell(row=row,
+                               column=ReportFieldEnum.DEADLINES_FAILS
+                               ).value = "Кол-во сорванных сроков сдачи"
+                worksheet.cell(row=row,
+                               column=ReportFieldEnum.TASKS_COMPLETED
+                               ).value = "Кол-во выполненных задач"
+                worksheet.cell(row=row,
+                               column=ReportFieldEnum.TASK_RATIO
+                               ).value = "Объём выполненных задач"
                 row += 1
             if row > 1:
-                worksheet.cell(row=row, column=ReportFieldEnum.STUDENT_NAME).value = student.full_name
-                worksheet.cell(row=row, column=ReportFieldEnum.POINTS).value = answers.point
+                worksheet.cell(row=row,
+                               column=ReportFieldEnum.STUDENT_NAME
+                               ).value = student.full_name
+                worksheet.cell(row=row,
+                               column=ReportFieldEnum.POINTS
+                               ).value = answers.point
 
                 deadlines_fails = 0
                 lab_completed = 0
@@ -92,8 +119,12 @@ class BaseReportBuilder:
                                 deadlines_fails += 1
                         else:
                             deadlines_fails += 1
-                worksheet.cell(row=row, column=ReportFieldEnum.LAB_COMPLETED).value = lab_completed
-                worksheet.cell(row=row, column=ReportFieldEnum.DEADLINES_FAILS).value = deadlines_fails
+                worksheet.cell(row=row,
+                               column=ReportFieldEnum.LAB_COMPLETED
+                               ).value = lab_completed
+                worksheet.cell(row=row,
+                               column=ReportFieldEnum.DEADLINES_FAILS
+                               ).value = deadlines_fails
 
                 task_completed = 0
                 for _, work in enumerate(home_works):
@@ -101,16 +132,18 @@ class BaseReportBuilder:
                         if task.is_done:
                             task_completed += 1
 
-                worksheet.cell(row=row, column=ReportFieldEnum.TASKS_COMPLETED).value = task_completed
+                worksheet.cell(row=row,
+                               column=ReportFieldEnum.TASKS_COMPLETED
+                               ).value = task_completed
                 worksheet.cell(
                     row=row, column=ReportFieldEnum.TASK_RATIO,
                 ).value = round(task_completed / self.tasks_in_discipline, 3)
 
             row += 1
 
-    def save_report(self):
+    def save_report(self) -> None:
         """
-        Метод сохранения отчёта
+        Save the report
         
         :return: None
         """
@@ -118,6 +151,8 @@ class BaseReportBuilder:
 
     def get_path_to_report(self) -> str:
         """
-        :return: путь до сформированного отчёта
+        Return the path to the generated report.
+
+        :return: path to the generated report
         """
         return str(self.__file_path)

@@ -1,5 +1,5 @@
 """
-...
+Contains handlers for administrative commands and everything related to them.
 """
 __all__ = ["admin_menu", "admin_keyboard"]
 

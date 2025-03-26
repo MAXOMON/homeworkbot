@@ -1,6 +1,10 @@
+"""
+Contains functionality for unpacking an archive from 
+a student containing answers, generating a path 
+to the directory in which the archive will be saved.
+"""
 from pathlib import Path
 from zipfile import ZipFile
-
 from database.main_db.common_crud import get_group
 from database.main_db.student_crud import get_student_by_tg_id
 
@@ -12,16 +16,17 @@ async def save_homework_file(
         lab_num: int,
         path_to_answer: str) -> list[str]:
     """
-    Функция распаковки архива студента с ответами по конкретной работе
+    Unzip and save the student's archive with answers to a specific task.
 
-    :param file_name: имя загруженного студентом архива
-    :param downloaded_file: сырое представление архива (набор байт)
-    :param user_tg_id: Telegram ID студента
-    :param lab_num: номер работы, по которой загружен архив с выполненными заданиями
-    :param path_to_answer: корневая директория загрузки ответов,
-      по выбранной студентом дисциплине
+    :param file_name: name of the archive uploaded by the student
+    :param downloaded_file: raw archive representation (byte set)
+    :param user_tg_id: student Telegram ID
+    :param lab_num: work number for which the archive 
+        with completed tasks was loaded
+    :param path_to_answer: root directory for loading answers,
+        for the discipline chosen by the student
 
-    :return: список путей до распакованных файлов ответов
+    :return: list of paths to unpacked response files
     """
     student = get_student_by_tg_id(user_tg_id)
     group = get_group(student.group_id)
@@ -41,7 +46,9 @@ async def save_homework_file(
 
     with open(path.joinpath(file_name), "wb") as new_file:
         new_file.write(downloaded_file)
-    with ZipFile(path.joinpath(file_name), "r", metadata_encoding="cp866") as zipObj:
+    with ZipFile(path.joinpath(file_name),
+                 "r",
+                 metadata_encoding="cp866") as zipObj:
         zipObj.extractall(path=path)
 
     filelist = [str(path.joinpath(file.filename)) for file in zipObj.filelist]

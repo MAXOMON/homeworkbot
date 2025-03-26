@@ -90,6 +90,8 @@ def first_admin_keyboard(message: Message) -> ReplyKeyboardMarkup:
 
     :param message: the object containing information about
         an incoming message from the user.
+    :return ReplyKeyboardMarkup: This object represents a custom keyboard 
+        with reply options.
     """
     markup = ReplyKeyboardMarkup(row_width=3)
     markup.add(

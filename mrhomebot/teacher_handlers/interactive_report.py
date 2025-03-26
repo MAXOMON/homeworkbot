@@ -1,10 +1,14 @@
+"""
+A module for processing teacher commands, in this case, 
+receiving an interactive report on the academic performance 
+of a specific student.
+"""
 import asyncio
-
-from telebot.types import CallbackQuery, InlineKeyboardButton, InlineKeyboardMarkup
-
+from telebot.types import CallbackQuery, InlineKeyboardButton,\
+    InlineKeyboardMarkup
 from database.main_db import teacher_crud
-from mrhomebot import bot
 from model.pydantic.student_report import StudentReport
+from mrhomebot import bot
 from reports.interactive_report_builder import run_interactive_report_builder
 
 
@@ -14,18 +18,31 @@ __report_prefix = [
     'interactiveStRep_'
 ]
 
-
 def __is_interactive_prefix_callback(data: str) -> bool:
+    """
+    Check if such a prefix is ​in the list of commands available 
+    for receiving an interactive report.
+
+    :param data: eg message.text
+
+    :param bool: True IF is a command ELSE False
+    """
     for it in __report_prefix:
         if it in data:
             return True
     return False
 
-
 @bot.callback_query_handler(
     func=lambda call: __is_interactive_prefix_callback(call.data)
 )
 async def callback_interactive_report(call: CallbackQuery):
+    """
+    Create a keyboard with a choice of group, discipline and specific student,
+    and delegate the report generation to another function
+
+    :param call: an object that extends a standard message.
+        Contains information about the selected group and discipline.
+    """
     type_callback = call.data.split("_")[0]
     match type_callback:
         case 'interactiveGrRep':
@@ -99,20 +116,35 @@ async def __create_report(
         call: CallbackQuery,
         student_id: int,
         discipline_id: int) -> None:
+    """
+    Run the interactive report generation function in a separate thread.
+
+    :param call: an object that extends a standard message.
+    :param student_id: ID of the student for whom 
+        the report needs to be generated
+    :param discipline_id: ID of the discipline for which 
+        the report needs to be generated.
+    """
     await bot.edit_message_text(
         "Начинаем формировать отчёт",
         call.message.chat.id,
         call.message.id
     )
     report = await asyncio.gather(
-        asyncio.to_thread(run_interactive_report_builder, student_id, discipline_id)
+        asyncio.to_thread(run_interactive_report_builder,
+                          student_id,
+                          discipline_id
+                          )
     )
     student_report: StudentReport = report[0]
     text_report = f'<i>Студент</i>: <b>{student_report.full_name}</b>\n'
     text_report += f'<i>Кол-во баллов</i>: {student_report.points}\n'
-    text_report += f'<i>Пропущенных дедлайнов</i>: {student_report.deadlines_fails}\n'
-    text_report += f'<i>Полностью выполненных лаб</i>: {student_report.lab_completed}\n'
-    text_report += f'<i>Выполнено заданий</i>: {student_report.task_completed}\n'
+    text_report += f'<i>Пропущенных дедлайнов</i>: \
+        {student_report.deadlines_fails}\n'
+    text_report += f'<i>Полностью выполненных лаб</i>: \
+        {student_report.lab_completed}\n'
+    text_report += f'<i>Выполнено заданий</i>: \
+        {student_report.task_completed}\n'
     text_report += f'<i>Task ratio</i>: {student_report.task_ratio}\n'
     await bot.edit_message_text(
         text_report,

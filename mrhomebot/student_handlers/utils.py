@@ -1,14 +1,23 @@
 """
-Вспомогательный модуль с функциями по созданию различных стартовых
-или промежуточных InlineKeyboardButton
+An auxiliary module with functions for creating 
+various starting or intermediate InlineKeyboardButton
 """
 from telebot.types import Message, InlineKeyboardMarkup, InlineKeyboardButton
-
-from mrhomebot import bot
 from database.main_db import student_crud
+from mrhomebot import bot
 
 
 async def create_student_disciplines_button(message: Message, prefix: str):
+    """
+    Generates a keyboard with the disciplines of the selected student, 
+    with a callback function, for processing the selected discipline 
+    in other functionality of the system.
+
+    :param message: the object containing information about
+        an incoming message from the user. 
+    :param prefix: Text representation of a command that 
+        is used in various handlers, eg 'nearestDeadline'...
+    """
     disciplines = student_crud.get_assign_disciplines(message.from_user.id)
     if len(disciplines) < 1:
         await bot.send_message(

@@ -1,28 +1,28 @@
+"""This module contains a file directory builder with answers and tests"""
 import glob
 import json
 import shutil
 import uuid
 from datetime import datetime
 from pathlib import Path
-
 from pydantic.json import pydantic_encoder
-
+from database.main_db import common_crud
 from model.pydantic.queue_in_raw import QueueInRaw
 from model.queue_db.queue_in import QueueIn
-
-from database.main_db import common_crud
 from testing_tools.logger.report_model import TestLogInit
 
 
 class FolderBuilder:
     """
-    Класс формирования директории с файлами тестов, загруженных ответов студентов и
-    настроек политики тестирования и отклоняющий файлы ответов, на которые нет тестов
+    Class for creating a directory with test files, uploaded student answers
+    and testing policy settings and rejecting answer files
+    for which there are no tests.
     """
     def __init__(self, temp_path: Path, raw_data: QueueIn):
         """
-        :param temp_path: путь до временной директории
-        :param raw_data: данные по заданиям и номеру работы, что прислал студент
+        :param temp_path: path to temporary directory
+        :param raw_data: data on the assignments and the work number 
+            that the student sent
         """
         self.temp_path = temp_path
         self.student_id = raw_data.telegram_id
@@ -32,9 +32,20 @@ class FolderBuilder:
         self.is_test_available = False
 
     def get_lab_number(self) -> int:
+        """
+        Obtain the lab work number from the submitted work.
+
+        :return int: lab number
+        """
         return self.answer.lab_number
 
     def build(self) -> Path:
+        """
+        Forms a path in a pre-defined directory where the student's 
+            answers will be located. And copies his files with the work there.
+
+        :return Path: group_name/answers/student_full_name--uuid/...
+        """
         discipline = common_crud.get_discipline(self.answer.discipline_id)
         test_path = Path.cwd().joinpath(
             discipline.path_to_test
@@ -102,18 +113,47 @@ class FolderBuilder:
         return self.docker_folder
 
     def get_rejected_file_names(self) -> list[str]:
+        """
+        Get files that were rejected (failed to pass verification).
+
+        :return list[str]: list of file names
+        """
         return self.rejected_files
 
     def has_rejected_files(self) -> bool:
+        """
+        Check if there are any rejected files
+
+        :return bool: True IF has rej files ELSE False
+        """
         return len(self.rejected_files) > 0
 
     def has_file_for_test(self) -> bool:
+        """
+        Check if there are files available for testing.
+
+        :return bool: True IF has files ELSE False
+        """
         return self.is_test_available
 
     def add_file(self, path_to_file: Path) -> None:
+        """
+        Add the selected file to an existing directory.
+
+        :param path_to_file: Path to the file to be added.
+
+        :return None:
+        """
         shutil.copy(path_to_file, self.docker_folder)
 
     def add_dir(self, path_to_dir: Path) -> None:
+        """
+        Add the selected directory to an existing directory.
+
+        :param path_to_dir: Path to the directory to be added.
+
+        :return None:
+        """
         shutil.copytree(
             path_to_dir,
             self.docker_folder.joinpath(path_to_dir.name)

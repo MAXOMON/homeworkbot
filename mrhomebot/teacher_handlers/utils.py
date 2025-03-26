@@ -1,10 +1,22 @@
+"""
+An auxiliary module with functions for creating 
+various starting or intermediate InlineKeyboardButton
+"""
 from telebot.types import Message, InlineKeyboardMarkup, InlineKeyboardButton
-
-from mrhomebot import bot
 from database.main_db import teacher_crud
+from mrhomebot import bot
 
 
 async def create_teacher_groups_button(message: Message, callback_prefix: str):
+    """
+    Generates a keyboard with a callback function in the Telegram bot chat,
+    with groups that are assigned to a given teacher.
+
+    :param message: the object containing information about 
+        an incoming message from a user.
+    :param callback_prefix: Text representation of a command that 
+        is used in various handlers, eg 'interactiveGrRep'...
+    """
     groups = teacher_crud.get_assign_groups(message.from_user.id)
     if len(groups) < 1:
         await bot.send_message(message.chat.id, "В БД отсутствуют группы!")
@@ -24,7 +36,19 @@ async def create_teacher_groups_button(message: Message, callback_prefix: str):
         reply_markup=markup
     )
 
-async def create_teacher_discipline_button(message: Message, callback_prefix: str):
+async def create_teacher_discipline_button(
+        message: Message,
+        callback_prefix: str
+        ):
+    """
+    Generates a keyboard with a callback function in the Telegram bot chat,
+    with disciplines that are assigned to a given teacher.
+
+    :param message: the object containing information about 
+        an incoming message from a user.
+    :param callback_prefix: Text representation of a command that 
+        is used in various handlers, eg 'interactiveGrRep'...
+    """
     disciplines = teacher_crud.get_teacher_disciplines(message.from_user.id)
     if len(disciplines) < 1:
         await bot.send_message(message.chat.id, "В БД отсутствуют дисциплины!")

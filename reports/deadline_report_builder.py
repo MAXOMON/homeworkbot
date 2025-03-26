@@ -1,6 +1,9 @@
+"""
+Module for generating information about the nearest deadline 
+for a specific student.
+"""
 import json
 from datetime import datetime
-
 from database.main_db import common_crud
 from model.pydantic.home_work import DisciplineHomeWorks
 from model.pydantic.student_report import StudentReport
@@ -10,13 +13,13 @@ def run_deadline_report_builder(
         student_id: int,
         discipline_id: int) -> str:
     """
-    Функция формирует информацию о дедлайне, 
-    для конкретной дисциплины конкретного студента
+    Generate and return deadline information 
+    for a specific course for a specific student.
 
-    :param student_id: ID студента
-    :param discipline_id: ID дисциплины
+    :param student_id: student ID
+    :param discipline_id: discipline ID
 
-    :return: информация в строковом представлении
+    :return: information in string representation
     """
     student_report = StudentReport()
     student = common_crud.get_student_from_id(student_id)
@@ -44,8 +47,9 @@ def run_deadline_report_builder(
             deadline_failed += 1
 
     if deadline_failed == len(home_works):
-        return f"ВЫ СОРВАЛИ ВСЕ СРОКИ"
+        return "ВЫ СОРВАЛИ ВСЕ СРОКИ"
     elif nearest_deadline is not None:
         return f"Ближайший дедлайн {nearest_deadline} в 23:59"
     else:
-        return f"Сроки всех дедлайнов истекли! Если есть задолженность - торопитесь!"
+        return "Сроки всех дедлайнов истекли! \
+            Если есть задолженность - торопитесь!"

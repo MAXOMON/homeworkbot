@@ -1,16 +1,21 @@
+"""Student Command Processing Module for loading answers from a student"""
 from telebot.asyncio_handler_backends import State, StatesGroup
-
+from telebot.types import CallbackQuery, Message, InlineKeyboardButton,\
+    InlineKeyboardMarkup
 from database.main_db import common_crud
 from database.queue_db import queue_in_crud
 from model.pydantic.queue_in_raw import QueueInRaw
-
-from telebot.types import CallbackQuery, Message, InlineKeyboardButton, InlineKeyboardMarkup
+from mrhomebot.configuration import bot
 from utils.check_exist_test_folder import is_test_folder_exist
 from utils.unzip_homework_files import save_homework_file
-from mrhomebot.configuration import bot
+
 
 
 class StudentStates(StatesGroup):
+    """
+    To manage the current state, which is necessary to restrict/grant access
+    to certain system functions, eg upload answer.
+    """
     upload_answer = State()
 
 
@@ -18,9 +23,20 @@ PAGINATOR = 5
 
 
 @bot.callback_query_handler(
-    func=lambda call: ("uploadAnswer_" in call.data) or ("labNumber_" in call.data)
-)
+    func=lambda call: ("uploadAnswer_" in call.data) or
+                    ("labNumber_" in call.data))
 async def handle_upload_answer(call: CallbackQuery):
+    """
+    Pass to the next function, responsible for loading the answers 
+    from the student, after collecting 
+    (the buttons in the telegram chat are formed, with a callback function) 
+    all the necessary information about the group number, 
+    its discipline and the laboratory work number.
+
+    :param call: an object that extends a standard message.
+        may contain information about the discipline,
+        lab assignment number, etc.
+    """
     type_callback = call.data.split("_")[0]
     match type_callback:
         case "uploadAnswer":
@@ -29,29 +45,34 @@ async def handle_upload_answer(call: CallbackQuery):
             discipline = common_crud.get_discipline(discipline_id)
             markup = InlineKeyboardMarkup()
             markup.row_width = 1
-            lab_list = [f"Лаб. раб. № {it}" for it in range(1, discipline.max_home_works + 1)]
+            lab_list = [f"Лаб. раб. № {it}" 
+                        for it in range(1, discipline.max_home_works + 1)]
             markup.add(
                 *[InlineKeyboardButton(
                     it,
                     callback_data=f"labNumber_{it.split()[-1]}_{discipline_id}"
-                ) for it in lab_list[PAGINATOR * paginator:PAGINATOR * (paginator + 1)]]
+                ) for it in lab_list[
+                    PAGINATOR * paginator:PAGINATOR * (paginator + 1)]]
             )
             if paginator == 0:
                 markup.add(
                     InlineKeyboardButton(
                         "➡",
-                        callback_data=f"uploadAnswer_{paginator + 1}_{discipline_id}"
+                        callback_data=f"uploadAnswer_{paginator + 1}_\
+                            {discipline_id}"
                     )
                 )
             elif len(lab_list) > PAGINATOR * (paginator + 1):
                 markup.add(
                     InlineKeyboardButton(
                         "⬅",
-                        callback_data=f"uploadAnswer_{paginator - 1}_{discipline_id}"
+                        callback_data=f"uploadAnswer_{paginator - 1}_\
+                            {discipline_id}"
                     ),
                     InlineKeyboardButton(
                         "➡",
-                        callback_data=f"uploadAnswer_{paginator + 1}_{discipline_id}"
+                        callback_data=f"uploadAnswer_{paginator + 1}_\
+                            {discipline_id}"
                     ),
                     row_width=2
                 )
@@ -59,7 +80,8 @@ async def handle_upload_answer(call: CallbackQuery):
                 markup.add(
                     InlineKeyboardButton(
                         "⬅",
-                        callback_data=f"uploadAnswer_{paginator - 1}_{discipline_id}"
+                        callback_data=f"uploadAnswer_{paginator - 1}_\
+                            {discipline_id}"
                     )
                 )
 
@@ -100,8 +122,19 @@ async def handle_upload_answer(call: CallbackQuery):
                 call.message.id
             )
 
-@bot.message_handler(content_types=['document'], state=StudentStates.upload_answer)
+@bot.message_handler(
+        content_types=['document'], state=StudentStates.upload_answer
+        )
 async def handle_student_docs(message: Message):
+    """
+    Add a record with the student's answers 
+    to the input table of the intermediate database.
+
+    :param message: the object containing information about 
+        an incoming message from a user. In this case, 
+        it is an archive with ready-made responses from a student, 
+        which further require separate verification.
+    """
     result_message = await bot.send_message(
         message.chat.id,
         "<i>Загружаем ваш файл</i>",
@@ -109,7 +142,9 @@ async def handle_student_docs(message: Message):
         disable_web_page_preview=True
     )
 
-    async with bot.retrieve_data(message.from_user.id, message.chat.id) as data:
+    async with bot.retrieve_data(
+        message.from_user.id,
+        message.chat.id) as data:
         lab_num = data["labNumber"]
         discipline_id = data["discipline_id"]
 
@@ -147,7 +182,8 @@ async def handle_student_docs(message: Message):
             )
         )
 
-        await bot.send_message(message.chat.id, "Задания отправлены на проверку")
+        await bot.send_message(message.chat.id,
+                               "Задания отправлены на проверку")
 
     else:
         await bot.reply_to(message, "Неверный тип файла")

@@ -1,10 +1,9 @@
+"""Contains functionality for initialization of the application"""
 import os
-from setuptools._distutils.util import strtobool
 from pathlib import Path
-
 from dotenv import load_dotenv
+from setuptools._distutils.util import strtobool
 from sqlalchemy_utils import database_exists, create_database
-
 from database.main_db.database import engine as main_engine
 from database.main_db.database_creator import create_main_tables
 from database.queue_db.database import engine as queue_engine
@@ -13,6 +12,15 @@ from model.pydantic.db_creator_settings import DbCreatorSettings
 
 
 def init_app() -> None:
+    """
+    Creates the main and intermediate databases, 
+    as well as a directory where various reports will be stored, 
+    if they have not yet been created.
+
+    :param None:
+    :return None:
+    """
+
     load_dotenv()
 
     if not database_exists(main_engine.url):
@@ -30,4 +38,5 @@ def init_app() -> None:
         create_queue_tables()
 
     path = Path.cwd()
-    Path(path.joinpath(os.getenv("TEMP_REPORT_DIR"))).mkdir(parents=True, exist_ok=True)
+    Path(path.joinpath(os.getenv("TEMP_REPORT_DIR"))).mkdir(parents=True,
+                                                            exist_ok=True)

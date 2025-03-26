@@ -1,3 +1,7 @@
+"""
+This module is designed to generate a short report 
+on the student's academic performance.
+"""
 from datetime import datetime
 import json
 from database.main_db import common_crud
@@ -6,19 +10,32 @@ from reports.base_report_builder import BaseReportBuilder, ReportFieldEnum
 
 
 class ShortReportBuilder(BaseReportBuilder):
-
+    """Class for generating a short report on student performance"""
     def __init__(self, group_id: int, discipline_id: int):
+        """
+        :param group_id: student group id
+        :param discipline_id: student discipline id
+        """
         super().__init__(group_id, discipline_id, "short_report")
 
     def build_report(self) -> None:
+        """
+        start creating and filling a full report
+        
+        :return: None
+        """
         super().build_report()
         worksheet = self.wb.active
 
         students = common_crud.get_students_from_group(self.group_id)
         row = 1
         for student in students:
-            answers = common_crud.get_student_discipline_answer(student.id, self.discipline_id)
-            home_works = DisciplineHomeWorks(**json.loads(answers.home_work)).home_works
+            answers = common_crud.get_student_discipline_answer(
+                student.id,
+                self.discipline_id)
+            home_works = DisciplineHomeWorks(
+                **json.loads(answers.home_work)
+                ).home_works
             if row == 1:
                 col = ReportFieldEnum.NEXT
                 for number_lab, work in enumerate(home_works):

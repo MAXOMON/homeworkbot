@@ -1,15 +1,17 @@
+"""
+Contains functionality for checking for the presence of a directory with tests.
+"""
 import os
 from pathlib import Path
-
 from database.main_db import common_crud
 
 
 def is_test_folder_exist(discipline_id: int, work_id: int) -> bool:
     """
-    Функция проверяет, существует ли такая директория с тестами
+    Check if such directory with tests exists
 
-    :param discipline_id: ID дисциплины
-    :param work_id: номер работы
+    :param discipline_id: discipline ID
+    :param work_id: work number
     """
     discipline = common_crud.get_discipline(discipline_id)
     return os.path.exists(Path.cwd().joinpath(

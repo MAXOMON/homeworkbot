@@ -1,3 +1,4 @@
+"""Contains handlers for teacher commands and everything related to them"""
 __all__ = ["teacher_menu", "create_teacher_keyboard"]
 
 

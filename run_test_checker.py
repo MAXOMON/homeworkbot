@@ -1,12 +1,11 @@
 """
-Модуль запуска подсистемы проверки ответов в отдельном процессе
+Module for launching the response verification subsystem in a separate process
 Example:
     $ python run_test_checker.py
 """
 import asyncio
 import os
 from pathlib import Path
-
 from testing_tools.checker.task_processing import TaskProcessing
 from utils.init_app import init_app
 

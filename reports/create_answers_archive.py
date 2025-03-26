@@ -1,3 +1,7 @@
+"""
+This is where the creation of an archive of students
+answers takes place and the formation of a path to it.
+"""
 import os
 import shutil
 from datetime import datetime
@@ -6,11 +10,12 @@ from pathlib import Path
 
 def create_answers_archive(path_to_group_folder: Path) -> Path:
     """
-    Функция формирования архива ответов группы
+    Create an archive with the group's responses.
 
-    :param path_to_group_folder: путь до директории группы, где хранятся ответы
+    :param path_to_group_folder: path to the group directory 
+        where the answers are stored
 
-    :return: путь до сформированного архива
+    :return Path: path to the generated archive
     """
     path = Path(Path.cwd().joinpath(os.getenv("TEMP_REPORT_DIR")))
     file_name = f'data_{datetime.now().date()}'

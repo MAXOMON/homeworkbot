@@ -1,8 +1,10 @@
+"""
+This module is responsible for sending information to the Telegram bot chat 
+to the user about completed/uncompleted work on his homework.
+"""
 import asyncio
 import json
-
 from telebot.async_telebot import AsyncTeleBot
-
 from database.queue_db import queue_out_crud, rejected_crud
 from model.pydantic.queue_out_raw import TestResult
 from model.pydantic.test_rejected_files import TestRejectedFiles
@@ -10,6 +12,13 @@ from model.queue_db.queue_out import QueueOut
 
 
 def _get_lab_number(name: str) -> int:
+    """
+    Returns the extracted lab work number from the work file name.
+
+    :param name: name of the work file.
+
+    :return int: lab work number
+    """
     name = name.replace("-", "_")
     value = name.split("_")[-1]
     value = value.split(".")[0]
@@ -18,20 +27,26 @@ def _get_lab_number(name: str) -> int:
 
 class AnswerProcessing:
     """
-    Класс опроса промежуточной БД и отправки результатов студенту
+    Class for polling the intermediate database 
+    and sending results to the student
     """
-
     def __init__(self, bot: AsyncTeleBot,
                  amount_answer_process: int | None = None):
         """
-        :param bot: ссылка на экземпляр бота
-        :param amount_answer_process: количество обрабатываемых за раз записей.
-        Если установлено в None - выгребается всё из таблицы БД
+        :param bot: link to bot instance
+        :param amount_answer_process: number of records processed at a time.
+            If set to None - everything is scraped from the DB table
         """
         self.slice_size = amount_answer_process
         self.bot = bot
 
     async def run(self):
+        """
+        Run an event listener that monitors the output and rejected tables 
+        of the intermediate database. And send the results 
+        from the output table for further processing, 
+        and the results from the rejected table to the telegram bot chat.
+        """
         while True:
             await asyncio.sleep(2)
             if queue_out_crud.is_not_empty():
@@ -55,12 +70,12 @@ class AnswerProcessing:
 
     async def __processing_records(self, records: list[QueueOut]) -> None:
         """
-        Метод подготовки и отправки ответа 
-        по результатам проверки заданий работы
+        Prepare and submit a response based on the results 
+        of checking your homework assignments.
 
-        :param records: записи результатов
+        :param records: Result records
 
-        :return: None
+        :return None:
         """
         for record in records:
             test_result = TestResult(**json.loads(record.data))
