@@ -1,7 +1,7 @@
 """Describes 'teachers' table - teachers of this project"""
 from dataclasses import dataclass
 from typing import List
-from sqlalchemy import Integer, String
+from sqlalchemy import Integer, String, BigInteger
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from database.main_db.database import Base
 from model.main_db.teacher_discipline import association_teacher_to_discipline
@@ -22,7 +22,7 @@ class Teacher(Base):
 
     id: Mapped[int] = mapped_column(primary_key=True)
     full_name: Mapped[str] = mapped_column(String(150), nullable=False)
-    telegram_id: Mapped[int] = mapped_column(Integer,
+    telegram_id: Mapped[int] = mapped_column(BigInteger,
                                              nullable=False,
                                              unique=True)
 

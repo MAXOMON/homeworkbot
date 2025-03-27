@@ -1,7 +1,7 @@
 """Describes 'students' table - students in this system"""
 from dataclasses import dataclass
 from typing import List
-from sqlalchemy import String, ForeignKey
+from sqlalchemy import String, ForeignKey, BigInteger
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from database.main_db.database import Base
 
@@ -24,7 +24,7 @@ class Student(Base):
     group_id: Mapped[int] = mapped_column(
         ForeignKey('groups.id', ondelete="CASCADE"), nullable=False
         )
-    telegram_id: Mapped[int] = mapped_column(nullable=True, unique=True)
+    telegram_id: Mapped[int] = mapped_column(BigInteger, nullable=True, unique=True)
 
     group: Mapped["Group"] = relationship(
         back_populates="students"

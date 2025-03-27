@@ -10,13 +10,15 @@ from sqlalchemy.orm import sessionmaker, DeclarativeBase
 
 load_dotenv()
 
-engine = create_engine(f"sqlite:///{os.getenv('DATABASE_NAME')}.sqlite")
+#engine = create_engine(f"sqlite:///{os.getenv('DATABASE_NAME')}.sqlite")
+engine = create_engine(
+    f"mysql+pymysql://{os.getenv('DB_USERNAME')}:{os.getenv('DB_PASSWORD')}@localhost:3306/{os.getenv('DATABASE_NAME')}")
 Session = sessionmaker(bind=engine)
 
-
+"""
 @event.listens_for(Engine, "connect")
 def set_sqlite_pragma(dbapi_connection, connection_record):
-    """
+    
     Enable correct operation of foreign keys in SQLite.
 
     This function is triggered when a connection
@@ -31,11 +33,11 @@ def set_sqlite_pragma(dbapi_connection, connection_record):
         SQLAlchemy, providing context for the current connection.
 
     :return None:
-    """
+    
     cursor = dbapi_connection.cursor()
     cursor.execute("PRAGMA foreign_keys=ON")
     cursor.close()
-
+"""
 
 class Base(DeclarativeBase):
     """

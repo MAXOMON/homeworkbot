@@ -10,7 +10,9 @@ from sqlalchemy.orm import sessionmaker, DeclarativeBase
 
 load_dotenv()
 
-engine = create_engine(f"sqlite:///{os.getenv('QUEUE_DB_NAME')}.sqlite")
+#engine = create_engine(f"sqlite:///{os.getenv('QUEUE_DB_NAME')}.sqlite")
+engine = create_engine(
+    f"mysql+pymysql://{os.getenv('DB_USERNAME')}:{os.getenv('DB_PASSWORD')}@localhost:3306/{os.getenv('QUEUE_DB_NAME')}")
 Session = sessionmaker(bind=engine)
 
 class Base(DeclarativeBase):
@@ -18,7 +20,6 @@ class Base(DeclarativeBase):
     Inherited from sqlalchemy.orm.DeclarativeBase
     necessary for correct operation of DB initialization
     """
-    pass
 
 
 def create_tables() -> None:
