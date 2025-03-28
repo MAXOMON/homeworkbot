@@ -11,8 +11,7 @@ from sqlalchemy.orm import sessionmaker, DeclarativeBase
 load_dotenv()
 
 engine = create_engine(
-    f"postgresql+psycopg://{os.getenv('DB_USERNAME')}:\
-        {os.getenv('DB_PASSWORD')}@localhost:5432/{os.getenv('DATABASE_NAME')}"
+    f"postgresql+psycopg://{os.getenv('DB_USERNAME')}:{os.getenv('DB_PASSWORD')}@localhost:5432/{os.getenv('DATABASE_NAME')}"
 )
 
 Session = sessionmaker(bind=engine)
