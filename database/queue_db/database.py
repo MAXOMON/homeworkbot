@@ -10,9 +10,11 @@ from sqlalchemy.orm import sessionmaker, DeclarativeBase
 
 load_dotenv()
 
-#engine = create_engine(f"sqlite:///{os.getenv('QUEUE_DB_NAME')}.sqlite")
 engine = create_engine(
-    f"mysql+pymysql://{os.getenv('DB_USERNAME')}:{os.getenv('DB_PASSWORD')}@localhost:3306/{os.getenv('QUEUE_DB_NAME')}")
+    f"postgresql+psycopg://{os.getenv('DB_USERNAME')}:\
+        {os.getenv('DB_PASSWORD')}@localhost:5432/{os.getenv('QUEUE_DB_NAME')}"
+)
+
 Session = sessionmaker(bind=engine)
 
 class Base(DeclarativeBase):
