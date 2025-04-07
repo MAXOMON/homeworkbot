@@ -139,3 +139,6 @@ dmypy.json
 temp/
 _disciplines/
 files/
+
+#certs
+*.pem

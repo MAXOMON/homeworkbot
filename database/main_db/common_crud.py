@@ -27,10 +27,10 @@ import utils.homeworks_utils as utils
 
 class UserEnum(Enum):
     """For simplified user classification and verification"""
-    Admin = 0
-    Teacher = 1
-    Student = 2
-    Unknown = 3
+    ADMIN = 0
+    TEACHER = 1
+    STUDENT = 2
+    UNKNOWN = 3
 
 
 def user_verification(telegram_id: int) -> UserEnum:
@@ -42,20 +42,22 @@ def user_verification(telegram_id: int) -> UserEnum:
     :return UserEnum: value represented by the UserEnum class (Enum)
     """
     with Session() as session:
-        user = session.query(Admin).get(telegram_id)
+        user = session.query(Admin).filter(
+            Admin.telegram_id == telegram_id
+        ).first()
         if user is not None:
-            return UserEnum.Admin
+            return UserEnum.ADMIN
         user = session.query(Teacher).filter(
             Teacher.telegram_id == telegram_id
         ).first()
         if user is not None:
-            return UserEnum.Teacher
+            return UserEnum.TEACHER
         user = session.query(Student).filter(
             Student.telegram_id == telegram_id
         ).first()
         if user is not None:
-            return UserEnum.Student
-        return UserEnum.Unknown
+            return UserEnum.STUDENT
+        return UserEnum.UNKNOWN
 
 def get_chats() -> list[int]:
     """
@@ -118,7 +120,8 @@ def is_ban(telegram_id: int) -> bool:
     :return bool: True IF student is banned ELSE False
     """
     with Session() as session:
-        tg_id = session.get(StudentBan, telegram_id)
+        tg_id = session.query(StudentBan).filter(
+            StudentBan.telegram_id == telegram_id).first()
         return tg_id is not None
 
 def get_ban_students(teacher_telegram_id: int) -> list[Student]:
@@ -228,7 +231,7 @@ def get_discipline(discipline_id: int) -> Discipline:
         result = session.query(Discipline).get(discipline_id)
         return result
 
-def get_student_discipline_answer(
+def get_disciplines_assigned_to_student(
         student_id: int, discipline_id: int
         ) -> AssignedDiscipline:
     """
@@ -241,11 +244,11 @@ def get_student_discipline_answer(
         in the format of the AssignedDiscipline class object
     """
     with Session() as session:
-        answers = session.query(AssignedDiscipline).filter(
+        assigned_disciplines = session.query(AssignedDiscipline).filter(
             AssignedDiscipline.discipline_id == discipline_id,
             AssignedDiscipline.student_id == student_id
         ).first()
-        return answers
+        return assigned_disciplines
 
 def get_student_from_id(student_id: int) -> Student:
     """
@@ -257,7 +260,7 @@ def get_student_from_id(student_id: int) -> Student:
         in the format of the Student class object
     """
     with Session() as session:
-        return session.query(Student).get(student_id)
+        return session.get(Student, student_id)
 
 def write_test_result(lab_report: LabReport, input_record: QueueIn) -> None:
     """

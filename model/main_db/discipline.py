@@ -49,7 +49,9 @@ class Discipline(Base):
 
     groups: Mapped[List['Group']] = relationship(
         secondary=association_discipline_to_group,
-        back_populates="disciplines"
+        back_populates="disciplines",
+        cascade="all, delete, delete-orphan",
+        single_parent=True
     )
 
     teachers: Mapped[List['Teacher']] = relationship(

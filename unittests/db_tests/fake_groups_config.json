@@ -1,0 +1,26 @@
+[
+  {
+    "group_name": "FAKE_1",
+    "disciplines_short_name": [
+      "UTT"
+    ],
+    "students": [
+      "Robot Bender 001",
+      "Robot Bender 002",
+      "Robot Bender 003"
+    ]
+  },
+  {
+    "group_name": "FAKE_2",
+    "disciplines_short_name": [
+      "UTT"
+    ],
+    "students": [
+      "Robot Bender 100",
+      "Robot Bender 200",
+      "Robot Bender 300",
+      "Robot Bender 400",
+      "Robot Bender 500"
+    ]
+  }
+]

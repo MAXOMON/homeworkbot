@@ -17,7 +17,6 @@ class AddStudentStep(IntEnum):
     To indicate to other functionality at what stage 
     the process of adding a student is.
     """
-    #SELECT_GROUP = 0
     SAVE = 1
 
 class ProcessAddStudent(BaseModel):

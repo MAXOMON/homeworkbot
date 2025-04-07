@@ -3,7 +3,6 @@ This module contains the basic operations with incoming data
 for their subsequent entry/extraction into the queue database rejected table.
 """
 import json
-#from sqlalchemy import delete
 from pydantic.json import pydantic_encoder
 from database.queue_db.database import Session
 from model.pydantic.test_rejected_files import TestRejectedFiles

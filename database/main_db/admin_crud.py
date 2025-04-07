@@ -230,7 +230,8 @@ def add_students_group(student_groups: list[StudentsGroup]) -> None:
         for it in student_groups:
             group = Group(
                 group_name=it.group_name,
-                students = [Student(full_name=student_raw) for student_raw in it.students]
+                students = [Student(full_name=student_raw) 
+                            for student_raw in it.students]
                 )
             session.add(group)
 
@@ -304,8 +305,21 @@ def delete_group(group_id: int) -> None:
     :return None:
     """
     with Session() as session:
-        query = delete(Group).where(Group.id == group_id)
-        session.execute(query)
+        group = session.get(Group, group_id)
+        session.delete(group)
+        session.commit()
+
+def delete_discipline(discipline_id: int) -> None:
+    """
+    Delete discipline from DB
+
+    :param discipline_id: discipline ID on DB
+
+    :return None:
+    """
+    with Session() as session:
+        discipline = session.get(Discipline, discipline_id)
+        session.delete(discipline)
         session.commit()
 
 def delete_student(student_id: int) -> None:
@@ -317,8 +331,8 @@ def delete_student(student_id: int) -> None:
     :return None:
     """
     with Session() as session:
-        query = delete(Student).where(Student.id == student_id)
-        session.execute(query)
+        student = session.get(Student, student_id)
+        session.delete(student)
         session.commit()
 
 def delete_teacher(teacher_id: int) -> None:
@@ -330,8 +344,34 @@ def delete_teacher(teacher_id: int) -> None:
     :return None:
     """
     with Session() as session:
-        query = delete(Teacher).where(Teacher.id == teacher_id)
+        teacher = session.get(Teacher, teacher_id)
+        session.delete(teacher)
+        session.commit()
+
+def delete_teacher_on_tg_id(teacher_telegram_id: int) -> None:
+    """
+    Remove the teacher from the database
+
+    :param teacher_id: teacher Telegram ID
+
+    :return None:
+    """
+    with Session() as session:
+        query = delete(Teacher).where(Teacher.telegram_id == teacher_telegram_id)
         session.execute(query)
+        session.commit()
+
+def delete_chat(chat_id: int) -> None:
+    """
+    Delete chat from database
+
+    :param chat_id: chat Telegram ID
+
+    :return None:
+    """
+    with Session() as session:
+        chat = session.get(Chat, chat_id)
+        session.delete(chat)
         session.commit()
 
 def get_all_disciplines() -> list[Discipline]:
@@ -355,7 +395,6 @@ def get_discipline(discipline_id: int) -> Discipline:
     """
     with Session() as session:
         return session.get(Discipline, discipline_id)
-        #return session.query(Discipline).get(discipline_id)
 
 def remote_start_db_fill(data: DbStartData) -> None:
     """

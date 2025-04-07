@@ -30,11 +30,11 @@ class ShortReportBuilder(BaseReportBuilder):
         students = common_crud.get_students_from_group(self.group_id)
         row = 1
         for student in students:
-            answers = common_crud.get_student_discipline_answer(
+            assigned_discipline = common_crud.get_disciplines_assigned_to_student(
                 student.id,
                 self.discipline_id)
             home_works = DisciplineHomeWorks(
-                **json.loads(answers.home_work)
+                **json.loads(assigned_discipline.home_work)
                 ).home_works
             if row == 1:
                 col = ReportFieldEnum.NEXT

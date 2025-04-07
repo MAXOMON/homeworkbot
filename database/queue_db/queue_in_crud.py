@@ -4,7 +4,6 @@ for their subsequent entry/extraction into the queue database input table.
 """
 import json
 from pydantic.json import pydantic_encoder
-#from sqlalchemy import delete
 from database.queue_db.database import Session
 from model.pydantic.queue_in_raw import QueueInRaw
 from model.queue_db.queue_in import QueueIn

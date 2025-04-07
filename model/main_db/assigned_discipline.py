@@ -20,7 +20,9 @@ class AssignedDiscipline(Base):
     __tablename__ = "assigned_discipline"
 
     id: Mapped[int] = mapped_column(primary_key=True)
-    discipline_id: Mapped[int] = mapped_column(ForeignKey("disciplines.id"), nullable=False)
+    discipline_id: Mapped[int] = mapped_column(
+        ForeignKey("disciplines.id", onupdate="CASCADE", ondelete="CASCADE"),
+        nullable=False)
     student_id: Mapped[int] = mapped_column(
         ForeignKey("students.id", ondelete="CASCADE"),
         nullable=False

@@ -23,13 +23,13 @@ def run_deadline_report_builder(
     """
     student_report = StudentReport()
     student = common_crud.get_student_from_id(student_id)
-    student_answer = common_crud.get_student_discipline_answer(
+    student_assigned_discipline = common_crud.get_disciplines_assigned_to_student(
         student_id,
         discipline_id
     )
     student_report.full_name = student.full_name
     home_works = DisciplineHomeWorks(
-        **json.loads(student_answer.home_work)
+        **json.loads(student_assigned_discipline.home_work)
         ).home_works
 
     current_date = datetime.now().date()

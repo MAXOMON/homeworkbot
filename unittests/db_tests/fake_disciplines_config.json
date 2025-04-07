@@ -1,0 +1,24 @@
+{
+    "full_name": "UnitTests Technologies",
+    "short_name": "UTT",
+    "path_to_test": "_disciplines/tmp/test",
+    "path_to_answer": "_disciplines/tmp/answer",
+    "language": "python",
+    "works": [
+        {
+          "number": 1,
+          "amount_tasks": 10,
+          "deadline": "2100-01-01"
+        },
+        {
+          "number": 2,
+          "amount_tasks": 20,
+          "deadline": "2200-02-02"
+        },
+        {
+          "number": 3,
+          "amount_tasks": 30,
+          "deadline": "2300-03-03"
+        }
+      ]
+}

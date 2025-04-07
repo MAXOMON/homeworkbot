@@ -36,8 +36,7 @@ async def is_subscribed(chat_id: int, user_id: int) -> bool:
         response = await bot.get_chat_member(chat_id, user_id)
         if response.status == "left":
             return False
-        else:
-            return True
+        return True
     except ApiTelegramException as ex:
         if ex.result_json["description"] == "Bad Request: user \
             is not subscribed":
@@ -56,21 +55,21 @@ async def handle_start(message: Message):
     """
     user = common_crud.user_verification(message.from_user.id)
     match user:
-        case UserEnum.Admin:
+        case UserEnum.ADMIN:
             await bot.send_message(
                 message.chat.id,
                 "<b>Hello, Admin!</b>",
                 parse_mode="HTML",
                 reply_markup=admin_keyboard(message)
             )
-        case UserEnum.Teacher:
+        case UserEnum.TEACHER:
             await bot.send_message(
                 message.chat.id,
                 "<i>Hello, Teacher!</i>",
                 parse_mode="HTML",
                 reply_markup=create_teacher_keyboard(message)
             )
-        case UserEnum.Student:
+        case UserEnum.STUDENT:
             await bot.send_message(
                 message.chat.id,
                 "Hello, Student!",
@@ -169,7 +168,29 @@ async def input_full_name(message: Message):
             'Пожалуйста, введите полное ФИО! Например: Иванов Иван Иванович',
         )
     else:
-        if student_crud.has_student(full_name):
+        if student_crud.has_more_students(full_name):
+            groups = student_crud.get_groups_of_students_with_same_name(
+                full_name)
+            groups_inline_buttons = [
+                InlineKeyboardButton(
+                    it.group_name,
+                    callback_data=f"FULL_NAME_WITH_{it.id}"
+                ) for it in groups
+            ]
+            markup = InlineKeyboardMarkup()
+            markup.row_width = 1
+            markup.add(*groups_inline_buttons)
+
+            async with bot.retrieve_data(
+                message.from_user.id, message.chat.id) as sel_data:
+                sel_data['full_name'] = full_name
+
+            await bot.send_message(
+                message.chat.id,
+                "Выберите группу, в которой вы учитесь:",
+                reply_markup=markup
+            )
+        elif student_crud.has_student(full_name):
             student_crud.set_telegram_id(full_name, message.from_user.id)
             await bot.send_message(
                 message.chat.id,
@@ -181,4 +202,22 @@ async def input_full_name(message: Message):
                 message.chat.id,
                 'Пожалуйста, проверьте корректность ввода ФИО \
                     или свяжитесь с преподавателем'
+            )
+
+@bot.callback_query_handler(func=lambda call: "FULL_NAME_WITH_" in call.data)
+async def input_full_name_with_group(call: CallbackQuery):
+    group_id = int(call.data.split('_')[-1])
+    async with bot.retrieve_data(
+        call.from_user.id,
+        call.message.chat.id
+    ) as sel_data:
+        full_name = sel_data['full_name']
+    telegram_id = call.from_user.id
+    student_crud.set_telegram_id_on_group_id(full_name,
+                                             group_id,
+                                             telegram_id)
+    await bot.send_message(
+                call.message.chat.id,
+                "Вы успешно авторизовались!",
+                reply_markup=student_keyboard(call.message)
             )
