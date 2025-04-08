@@ -24,6 +24,7 @@ async def main():
     temp_path = Path.cwd()
     temp_path = Path(temp_path.joinpath(os.getenv("TEMP_REPORT_DIR")))
     dockers_run = int(os.getenv("AMOUNT_DOKER_RUN"))
+    await bot.delete_webhook()
     await asyncio.gather(
         bot.infinity_polling(request_timeout=190),
         AnswerProcessing(bot).run(),
