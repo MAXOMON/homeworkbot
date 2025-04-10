@@ -122,6 +122,7 @@ async def callback_auth_query(call: CallbackQuery):
         contains the start command and the answer to consent 
         to the processing of personal data (yes/no).
     """
+    print(call, call.data, call.data.split("_"))
     type_callback = call.data.split("_")[0]
     match type_callback:
         case "start":

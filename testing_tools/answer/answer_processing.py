@@ -48,7 +48,7 @@ class AnswerProcessing:
         and the results from the rejected table to the telegram bot chat.
         """
         while True:
-            await asyncio.sleep(2)
+            await asyncio.sleep(3)
             if queue_out_crud.is_not_empty():
                 records = queue_out_crud.get_all_records()
                 if self.slice_size is not None:
@@ -92,6 +92,6 @@ class AnswerProcessing:
             await self.bot.send_message(
                 record.chat_id,
                 text=text,
-                parse_mode='HTML'
+                parse_mode='HTML',
             )
             queue_out_crud.delete_record(record.id)

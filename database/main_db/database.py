@@ -14,11 +14,7 @@ engine = create_engine(
     f"postgresql+psycopg://{os.getenv('DB_USERNAME')}" +
     f":{os.getenv('DB_PASSWORD')}@localhost:5432/{os.getenv('DATABASE_NAME')}"
 )
-print(f"postgresql+psycopg://{os.getenv('DB_USERNAME')}" +
-    f":{os.getenv('DB_PASSWORD')}@localhost:5432/{os.getenv('DATABASE_NAME')}")
 
-password = os.getenv('DB_PASSWORD')
-print(password, type(password))
 Session = sessionmaker(bind=engine)
 
 class Base(DeclarativeBase):

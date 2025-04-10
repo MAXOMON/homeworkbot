@@ -12,11 +12,9 @@ from mrhomebot.filters import AddStudentCallbackFilter, IsAdmin, IsStudent, \
 from mrhomebot.middlewares import BanMiddleware, StudentFloodMiddleware
 
 
-WEBHOOK_SSL_CERT = './webhook_cert.pem'
-WEBHOOK_SSL_PRIV = './webhook_pkey.pem'
-DOMAIN = '89.179.122.78'
-
 load_dotenv()
+
+
 
 
 bot = AsyncTeleBot(os.getenv("BOT_TOKEN"), state_storage=StateMemoryStorage())

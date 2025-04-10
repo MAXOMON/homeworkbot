@@ -48,7 +48,7 @@ class TaskProcessing:
         in a separate thread.
         """
         while True:
-            await asyncio.sleep(2)
+            await asyncio.sleep(3)
             if queue_in_crud.is_not_empty():
                 record = queue_in_crud.get_first_record()
                 await asyncio.gather(
