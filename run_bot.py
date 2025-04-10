@@ -42,8 +42,8 @@ load_dotenv()
 API_TOKEN = os.getenv('BOT_TOKEN')
 DOMAIN = os.getenv('DOMAIN')
 PORT = 88
-WEBHOOK_SSL_CERT = "public.pem"
-WEBHOO_SSL_PRIV = "private.key"
+WEBHOOK_SSL_CERT = "../public.pem"
+WEBHOO_SSL_PRIV = "../private.key"
 LISTEN_IP = '0.0.0.0'
 
 app = FastAPI(docs=None, redoc_url=None, docs_url=None)
