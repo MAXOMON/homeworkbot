@@ -68,10 +68,8 @@ class DockerBuilder:
         and get the result of the work done (logs) and save it.
         """
         self._build_docker_file()
-        
         with docker.build(context_path=self.test_dir,
                           tags=self.tag_name) as my_image:
-            with docker.container.run(self.tag_name,
             with docker.container.run(self.tag_name,
                             name=self.tag_name,
                             detach=True) as output:
