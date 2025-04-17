@@ -35,7 +35,7 @@ class Student(Base):
 
     def __repr__(self) -> str:
         info: str = f"Студент [ФИО: {self.full_name}, " \
-            f"ID группы: {self.group}, Telegram ID: {self.telegram_id}]" 
+            f"Telegram ID: {self.telegram_id}]" 
 
         return info
 

@@ -70,10 +70,10 @@ async def callback_download_full_report(call: CallbackQuery):
                 call.message.id
             )
             group_id = int(call.data.split("_")[1])
-            if admin_crud.is_admin_no_teacher_mode(call.from_user.id):
-                disciplines = common_crud.get_group_disciplines(group_id)
+            if await admin_crud.is_admin_no_teacher_mode(call.from_user.id):
+                disciplines = await common_crud.get_group_disciplines(group_id)
             else:
-                disciplines = teacher_crud.get_assign_group_discipline(
+                disciplines = await teacher_crud.get_assign_group_discipline(
                     call.from_user.id,
                     group_id
                     )
@@ -144,7 +144,7 @@ async def __create_report(
         call.message.id
     )
     path_to_report = await asyncio.gather(
-        asyncio.to_thread(
+        await asyncio.to_thread(
             run_report_builder,
             group_id, discipline_id,
             builder_type)

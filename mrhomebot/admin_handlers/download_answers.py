@@ -71,7 +71,7 @@ async def callback_download_answers(call: CallbackQuery):
     match type_callback:
         case "dowAnswersDis":
             discipline_id = int(call.data.split("_")[1])
-            discipline = admin_crud.get_discipline(discipline_id)
+            discipline = await admin_crud.get_discipline(discipline_id)
             path = Path.cwd().joinpath(discipline.path_to_answer)
             dirs = [it for it in path.iterdir() if it.is_dir()]
             if not dirs:
@@ -98,7 +98,7 @@ async def callback_download_answers(call: CallbackQuery):
         case "dowAnswersGr":
             group_name = call.data.split("_")[1]
             discipline_id = int(call.data.split("_")[2])
-            discipline = admin_crud.get_discipline(discipline_id)
+            discipline = await admin_crud.get_discipline(discipline_id)
             path = Path.cwd().joinpath(discipline.path_to_answer)
             path = path.joinpath(group_name)
             await _download_answer(call, path)

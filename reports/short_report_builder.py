@@ -11,26 +11,26 @@ from reports.base_report_builder import BaseReportBuilder, ReportFieldEnum
 
 class ShortReportBuilder(BaseReportBuilder):
     """Class for generating a short report on student performance"""
-    def __init__(self, group_id: int, discipline_id: int):
+    async def __init__(self, group_id: int, discipline_id: int):
         """
         :param group_id: student group id
         :param discipline_id: student discipline id
         """
-        super().__init__(group_id, discipline_id, "short_report")
+        await super().__init__(group_id, discipline_id, "short_report")
 
-    def build_report(self) -> None:
+    async def build_report(self) -> None:
         """
         start creating and filling a full report
         
         :return: None
         """
-        super().build_report()
+        await super().build_report()
         worksheet = self.wb.active
 
-        students = common_crud.get_students_from_group(self.group_id)
+        students = await common_crud.get_students_from_group(self.group_id)
         row = 1
         for student in students:
-            assigned_discipline = common_crud.get_disciplines_assigned_to_student(
+            assigned_discipline = await common_crud.get_disciplines_assigned_to_student(
                 student.id,
                 self.discipline_id)
             home_works = DisciplineHomeWorks(

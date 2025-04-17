@@ -36,7 +36,7 @@ async def create_unban_student_buttons(message: Message):
     :param message: the object containing information about
         an incoming message from the user.
     """
-    students = common_crud.get_ban_students(message.from_user.id)
+    students = await common_crud.get_ban_students(message.from_user.id)
     if len(students) < 1:
         await bot.send_message(message.chat.id, "Нет забаненных студентов")
         return
@@ -66,7 +66,7 @@ async def callback_unban_student(call: CallbackQuery):
     match type_callback:
         case "studentUnBan":
             telegram_id = int(call.data.split("_")[1])
-            common_crud.unban_student(telegram_id)
+            await common_crud.unban_student(telegram_id)
             await bot.edit_message_text(
                 "Студент разбанен!",
                 call.message.chat.id,

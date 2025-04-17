@@ -46,14 +46,14 @@ async def callback_del_student(call: CallbackQuery):
     match type_callback:
         case "groupStudDel":
             group_id = int(call.data.split("_")[1])
-            students = common_crud.get_students_from_group(group_id)
+            students = await common_crud.get_students_from_group(group_id)
             await create_callback_students_button(call,
                                                   students,
                                                   "studDel",
                                                   True)
         case "studDel":
             student_id = int(call.data.split("_")[1])
-            admin_crud.delete_student(student_id)
+            await admin_crud.delete_student(student_id)
             await bot.edit_message_text(
                 "Студент успешно удалён",
                 call.message.chat.id,

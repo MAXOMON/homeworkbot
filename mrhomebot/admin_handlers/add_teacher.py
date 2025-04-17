@@ -106,7 +106,7 @@ async def teacher_id_correct(message: Message):
             message.from_user.id,
             message.chat.id
         ) as data:
-            admin_crud.add_teacher(data["teacher_name"], int(message.text))
+            await admin_crud.add_teacher(data["teacher_name"], int(message.text))
         await bot.send_message(
             message.chat.id,
             "Преподаватель успешно добавлен!",

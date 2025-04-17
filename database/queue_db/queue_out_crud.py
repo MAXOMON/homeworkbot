@@ -3,14 +3,14 @@ This module contains the basic operations with incoming data
 for their subsequent entry/extraction into the queue database output table.
 """
 import json
-from pydantic.json import pydantic_encoder
 from database.queue_db.database import Session
 from model.pydantic.queue_out_raw import TestResult
 from model.queue_db.queue_out import QueueOut
+from pydantic.json import pydantic_encoder
+from sqlalchemy.future import select
 
 
-
-def is_empty() -> bool:
+async def is_empty() -> bool:
     """
     Check if output table is empty
 
@@ -18,11 +18,11 @@ def is_empty() -> bool:
 
     :return bool: True IF is empty ELSE False
     """
-    with Session() as session:
-        data = session.query(QueueOut).first()
+    async with Session() as session:
+        data = await session.scalar(select(QueueOut))
         return data is None
 
-def is_not_empty() -> bool:
+async def is_not_empty() -> bool:
     """
     Check if output table is not empty
 
@@ -30,11 +30,11 @@ def is_not_empty() -> bool:
 
     :return bool: True IF is not empty ELSE False
     """
-    with Session() as session:
-        data = session.query(QueueOut).first()
+    async with Session() as session:
+        data = await session.scalar(select(QueueOut))
         return data is not None
 
-def get_all_records() -> list[QueueOut]:
+async def get_all_records() -> list[QueueOut]:
     """
     Get all records from the output table
 
@@ -43,11 +43,11 @@ def get_all_records() -> list[QueueOut]:
     :return list[QueueOut]: list of output table records in the format 
         of objects of the QueueOut class
     """
-    with Session() as session:
-        data = session.query(QueueOut).all()
-        return data
+    async with Session() as session:
+        data = await session.scalars(select(QueueOut))
+        return data.all()
 
-def delete_record(record_id: int) -> None:
+async def delete_record(record_id: int) -> None:
     """
     Delete this record from output table
 
@@ -55,13 +55,14 @@ def delete_record(record_id: int) -> None:
 
     :return None:
     """
-    with Session() as session:
-        session.query(QueueOut).filter(
-            QueueOut.id == record_id
-        ).delete(synchronize_session="fetch")
-        session.commit()
+    async with Session() as session:
+        data = await session.scalar(
+            select(QueueOut).where(QueueOut.id == record_id)
+        )
+        await session.delete(data)
+        await session.commit()
 
-def add_record(user_tg_id: int, chat_id: int, data: TestResult) -> None:
+async def add_record(user_tg_id: int, chat_id: int, data: TestResult) -> None:
     """
     Add the check result to the output table
 
@@ -71,22 +72,21 @@ def add_record(user_tg_id: int, chat_id: int, data: TestResult) -> None:
 
     :return None:
     """
-    session = Session()
-    json_data = json.dumps(
-        data,
-        sort_keys=False,
-        indent=4,
-        ensure_ascii=False,
-        separators=(',', ': '),
-        default=pydantic_encoder
-    )
-
-    session.add(
-        QueueOut(
-            telegram_id=user_tg_id,
-            chat_id=chat_id,
-            data=json_data
-        )
-    )
-    session.commit()
-    session.close()
+    async with Session() as session:
+        async with session.begin():
+            json_data = json.dumps(
+                data,
+                sort_keys=False,
+                indent=4,
+                ensure_ascii=False,
+                separators=(',', ': '),
+                default=pydantic_encoder
+            )
+            session.add(
+                QueueOut(
+                    telegram_id=user_tg_id,
+                    chat_id=chat_id,
+                    data=json_data
+                )
+            )
+            await session.commit()

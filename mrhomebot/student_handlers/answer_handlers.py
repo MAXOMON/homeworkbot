@@ -10,7 +10,6 @@ from utils.check_exist_test_folder import is_test_folder_exist
 from utils.unzip_homework_files import save_homework_file
 
 
-
 class StudentStates(StatesGroup):
     """
     To manage the current state, which is necessary to restrict/grant access
@@ -42,10 +41,10 @@ async def handle_upload_answer(call: CallbackQuery):
         case "uploadAnswer":
             paginator = int(call.data.split("_")[1])
             discipline_id = int(call.data.split("_")[2])
-            discipline = common_crud.get_discipline(discipline_id)
+            discipline = await common_crud.get_discipline(discipline_id)
             markup = InlineKeyboardMarkup()
             markup.row_width = 1
-            lab_list = [f"Лаб. раб. № {it}" 
+            lab_list = [f"Лаб. раб. № {it}"
                         for it in range(1, discipline.max_home_works + 1)]
             markup.add(
                 *[InlineKeyboardButton(
@@ -93,7 +92,7 @@ async def handle_upload_answer(call: CallbackQuery):
             )
         case "labNumber":
             number = int(call.data.split("_")[1])
-            if not is_test_folder_exist(int(call.data.split("_")[2]), number):
+            if not await is_test_folder_exist(int(call.data.split("_")[2]), number):
                 await bot.edit_message_text(
                     "Тесты для этой работы не готовы",
                     call.message.chat.id,
@@ -148,7 +147,7 @@ async def handle_student_docs(message: Message):
         lab_num = data["labNumber"]
         discipline_id = data["discipline_id"]
 
-    discipline = common_crud.get_discipline(discipline_id)
+    discipline = await common_crud.get_discipline(discipline_id)
 
     file_name = message.document.file_name
     if file_name[-4:] == ".zip":
@@ -172,7 +171,7 @@ async def handle_student_docs(message: Message):
             discipline.path_to_answer
         )
 
-        queue_in_crud.add_record(
+        await queue_in_crud.add_record(
             message.from_user.id,
             message.chat.id,
             QueueInRaw(

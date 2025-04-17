@@ -45,7 +45,7 @@ async def callback_assign_teacher_to_group(call: CallbackQuery):
     match type_callback:
         case "assignTeacherGR":
             teacher_id = int(call.data.split("_")[1])
-            groups = admin_crud.get_not_assign_teacher_groups(teacher_id)
+            groups = await admin_crud.get_not_assign_teacher_groups(teacher_id)
             if len(groups) < 1:
                 await bot.send_message(
                     call.message.chat.id,
@@ -72,7 +72,7 @@ async def callback_assign_teacher_to_group(call: CallbackQuery):
         case "assignGroupT":
             group_id = call.data.split("_")[1]
             teacher_id = call.data.split("_")[2]
-            admin_crud.assign_teacher_to_group(int(teacher_id), int(group_id))
+            await admin_crud.assign_teacher_to_group(int(teacher_id), int(group_id))
             await bot.edit_message_text(
                 "Преподаватель назначен группе",
                 call.message.chat.id,

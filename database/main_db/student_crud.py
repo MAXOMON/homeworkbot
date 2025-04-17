@@ -5,11 +5,10 @@ from database.main_db.database import Session
 from model.main_db.discipline import Discipline
 from model.main_db.group import Group
 from model.main_db.student import Student
+from sqlalchemy.future import select
 
 
-
-
-def has_student(full_name: str) -> bool:
+async def has_student(full_name: str) -> bool:
     """
     Check if a student already exists in the database.
 
@@ -17,13 +16,15 @@ def has_student(full_name: str) -> bool:
 
     :return bool: True IF already exists ELSE False
     """
-    with Session() as session:
-        student = session.query(Student).filter(
-            Student.full_name.ilike(f"%{full_name}%")
-        ).first()
+    async with Session() as session:
+        student = await session.scalar(
+            select(Student).where(
+                Student.full_name.ilike(f"%{full_name}%")
+            )
+        )
         return student is not None
 
-def has_more_students(full_name: str) -> bool:
+async def has_more_students(full_name: str) -> bool:
     """
     Check if there are such students in the database with the same full name.
 
@@ -31,15 +32,17 @@ def has_more_students(full_name: str) -> bool:
 
     :return bool: True IF already exists ELSE False
     """
-    with Session() as session:
-        students = session.query(Student).filter(
-            Student.full_name.ilike(f"%{full_name}%")
-        ).all()
-        students = [student.telegram_id for student in students 
+    async with Session() as session:
+        students = await session.scalars(
+            select(Student).where(
+                Student.full_name.ilike(f"%{full_name}%")
+            )
+        )
+        students = [student.telegram_id for student in students.all() 
                     if student.telegram_id is None]
         return len(students) > 1
 
-def get_groups_of_students_with_same_name(full_name: str) -> list[Group]:
+async def get_groups_of_students_with_same_name(full_name: str) -> list[Group]:
     """
     Return a list of groups from the database in which students 
     with the same full name study
@@ -49,13 +52,15 @@ def get_groups_of_students_with_same_name(full_name: str) -> list[Group]:
     :return list[Group]: list of groups in which students 
         with the same full name study
     """
-    with Session() as session:
-        students = session.query(Student).filter(
-            Student.full_name.ilike(f"%{full_name}%")
-        ).all()
-        return [student.group for student in students]
+    async with Session() as session:
+        students = await session.scalars(
+            select(Student).filter(
+                Student.full_name.ilike(f"%{full_name}%")
+            )
+        )
+        return [student.group for student in students.all()]
 
-def is_student(telegram_id: int) -> bool:
+async def is_student(telegram_id: int) -> bool:
     """
     Check if the user is a student.
 
@@ -63,13 +68,15 @@ def is_student(telegram_id: int) -> bool:
 
     :return bool: True IF user a student ELSE False
     """
-    with Session() as session:
-        student = session.query(Student).filter(
-            Student.telegram_id == telegram_id
-        ).first()
+    async with Session() as session:
+        student = await session.scalar(
+            select(Student).where(
+                Student.telegram_id == telegram_id
+            )
+        )
         return student is not None
 
-def set_telegram_id(full_name: str, telegram_id: int) -> None:
+async def set_telegram_id(full_name: str, telegram_id: int) -> None:
     """
     Set this telegram ID for this student
 
@@ -78,17 +85,19 @@ def set_telegram_id(full_name: str, telegram_id: int) -> None:
 
     :return None:
     """
-    with Session() as session:
-        session.query(Student).filter(
-            Student.full_name.ilike(f"%{full_name}%")
-        ).where(
-            Student.telegram_id.is_(None)
-        ).update(
-            {Student.telegram_id: telegram_id}, synchronize_session="fetch"
-        )
-        session.commit()
+    async with Session() as session:
+        async with session.begin():
+            student = await session.scalar(
+                select(Student).where(
+                    Student.full_name.ilike(f"%{full_name}%")
+                ).where(
+                    Student.telegram_id.is_(None)
+                )
+            )
+            student.telegram_id = telegram_id
+            await session.commit()
 
-def set_telegram_id_on_group_id(full_name: str,
+async def set_telegram_id_on_group_id(full_name: str,
                                 group_id: int,
                                 telegram_id: int):
     """
@@ -100,16 +109,17 @@ def set_telegram_id_on_group_id(full_name: str,
     
     :return None:
     """
-    with Session() as session:
-        session.query(Student).filter(
-            Student.full_name == full_name,
-            Student.group_id == group_id
-        ).update(
-            {Student.telegram_id: telegram_id}, synchronize_session="fetch"
+    async with Session() as session:
+        student = await session.scalar(
+            select(Student).where(
+                Student.full_name.ilike(f"%{full_name}%"),
+                Student.group_id == group_id
+            )
         )
-        session.commit()
+        student.telegram_id = telegram_id
+        await session.commit()
 
-def get_student_by_tg_id(telegram_id: int) -> Student:
+async def get_student_by_tg_id(telegram_id: int) -> Student:
     """
     Return the Student object by his telegram ID
 
@@ -117,13 +127,15 @@ def get_student_by_tg_id(telegram_id: int) -> Student:
 
     :return: object of class Student
     """
-    with Session() as session:
-        student = session.query(Student).filter(
-            Student.telegram_id == telegram_id
-        ).first()
+    async with Session() as session:
+        student = await session.scalar(
+            select(Student).where(
+                Student.telegram_id == telegram_id
+            )
+        )
         return student
 
-def get_assign_disciplines(student_tg_id: int) -> list[Discipline]:
+async def get_assign_disciplines(student_tg_id: int) -> list[Discipline]:
     """
     Get all the disciplines assigned to the student.
 
@@ -131,8 +143,12 @@ def get_assign_disciplines(student_tg_id: int) -> list[Discipline]:
 
     :return list[Discipline]: list of objects of class Discipline
     """
-    with Session() as session:
-        student = session.query(Student).filter(
-            Student.telegram_id == student_tg_id
-        ).first()
-        return student.group.disciplines
+    async with Session() as session:
+        student = await session.scalar(
+            select(Student).where(
+                Student.telegram_id == student_tg_id
+            )
+        )
+        group = await getattr(student.awaitable_attrs, 'group')
+        disciplines = await getattr(group.awaitable_attrs, 'disciplines')
+        return disciplines

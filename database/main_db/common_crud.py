@@ -6,7 +6,8 @@ intended for the normal purposes of this system
 import json
 from datetime import datetime
 from enum import Enum
-from sqlalchemy import exists, and_, select, delete
+from sqlalchemy import exists, and_
+from sqlalchemy.future import select
 from sqlalchemy.orm import joinedload, selectinload
 from database.main_db import admin_crud
 from database.main_db.database import Session
@@ -33,7 +34,7 @@ class UserEnum(Enum):
     UNKNOWN = 3
 
 
-def user_verification(telegram_id: int) -> UserEnum:
+async def user_verification(telegram_id: int) -> UserEnum:
     """
     Check who this user is
 
@@ -41,25 +42,23 @@ def user_verification(telegram_id: int) -> UserEnum:
 
     :return UserEnum: value represented by the UserEnum class (Enum)
     """
-    with Session() as session:
-        user = session.query(Admin).filter(
-            Admin.telegram_id == telegram_id
-        ).first()
+    async with Session() as session:
+        user = await session.get(Admin, telegram_id)
         if user is not None:
             return UserEnum.ADMIN
-        user = session.query(Teacher).filter(
-            Teacher.telegram_id == telegram_id
-        ).first()
+        user = await session.scalar(
+            select(Teacher).where(Teacher.telegram_id == telegram_id)
+        )
         if user is not None:
             return UserEnum.TEACHER
-        user = session.query(Student).filter(
-            Student.telegram_id == telegram_id
-        ).first()
+        user = await session.scalar(
+            select(Student).where(Student.telegram_id == telegram_id)
+        )
         if user is not None:
             return UserEnum.STUDENT
         return UserEnum.UNKNOWN
 
-def get_chats() -> list[int]:
+async def get_chats() -> list[int]:
     """
     Return the list of chats in which the bot will be available
 
@@ -68,11 +67,13 @@ def get_chats() -> list[int]:
     :return list[int]: list of chats from DB in integer list format
     
     """
-    with Session() as session:
-        chats = session.query(Chat).all()
-        return [it.chat_id for it in chats]
+    async with Session() as session:
+        chats = await session.scalars(
+            select(Chat)
+        )
+        return [it.chat_id for it in chats.all()]
 
-def get_group_disciplines(group_id: int) -> list[Discipline]:
+async def get_group_disciplines(group_id: int) -> list[Discipline]:
     """
     Return all disciplines of the selected group
 
@@ -82,11 +83,12 @@ def get_group_disciplines(group_id: int) -> list[Discipline]:
         group from the database, 
         in the format of a list of objects of the Discipline class
     """
-    with Session() as session:
-        group = session.get(Group, group_id)
-        return group.disciplines
+    async with Session() as session:
+        group = await session.get(Group, group_id)
+        disciplines = await getattr(group.awaitable_attrs, 'disciplines')
+        return disciplines
 
-def ban_student(telegram_id: int) -> None:
+async def ban_student(telegram_id: int) -> None:
     """
     Ban this student
     
@@ -94,11 +96,11 @@ def ban_student(telegram_id: int) -> None:
 
     :return: None
     """
-    with Session() as session:
+    async with Session() as session:
         session.add(StudentBan(telegram_id=telegram_id))
-        session.commit()
+        await session.commit()
 
-def unban_student(telegram_id: int) -> None:
+async def unban_student(telegram_id: int) -> None:
     """
     Remove this student from the ban list
 
@@ -106,12 +108,14 @@ def unban_student(telegram_id: int) -> None:
 
     :return None:
     """
-    with Session() as session:
-        query = delete(StudentBan).where(StudentBan.telegram_id == telegram_id)
-        session.execute(query)
-        session.commit()
+    async with Session() as session:
+        student = await session.scalar(
+            select(StudentBan).where(StudentBan.telegram_id == telegram_id)
+        )
+        await session.delete(student)
+        await session.commit()
 
-def is_ban(telegram_id: int) -> bool:
+async def is_ban(telegram_id: int) -> bool:
     """
     Check if this student is on the ban list
 
@@ -119,12 +123,15 @@ def is_ban(telegram_id: int) -> bool:
 
     :return bool: True IF student is banned ELSE False
     """
-    with Session() as session:
-        tg_id = session.query(StudentBan).filter(
-            StudentBan.telegram_id == telegram_id).first()
+    async with Session() as session:
+        tg_id = await session.scalar(
+            select(StudentBan).where(
+                StudentBan.telegram_id == telegram_id
+            )
+        )
         return tg_id is not None
 
-def get_ban_students(teacher_telegram_id: int) -> list[Student]:
+async def get_ban_students(teacher_telegram_id: int) -> list[Student]:
     """
     Return all banned students of the selected teacher.
     Request is executed by administrator.
@@ -134,12 +141,14 @@ def get_ban_students(teacher_telegram_id: int) -> list[Student]:
     :return list[Student]: list of banned students from group selected teacher
         from database in the format list of objects of the class Student
     """
-    with Session() as session:
-        if admin_crud.is_admin_no_teacher_mode(teacher_telegram_id):
-            query = select(Student).where(
-                exists().where(StudentBan.telegram_id == Student.telegram_id)
-            )
-            return session.scalars(query).all()
+    async with Session() as session:
+        if await admin_crud.is_admin_no_teacher_mode(teacher_telegram_id):
+            result = await session.scalars(
+                select(Student).where(
+                    exists().where(
+                        StudentBan.telegram_id == Student.telegram_id)
+            ))
+            return result.all()
         else:
             query = select(Student).where(
                 exists().where(StudentBan.telegram_id == Student.telegram_id)
@@ -155,9 +164,10 @@ def get_ban_students(teacher_telegram_id: int) -> list[Student]:
             ).where(
                 Teacher.telegram_id == teacher_telegram_id
             )
-            return session.scalars(query).all()
+            result = await session.scalars(query)
+            return result.all()
 
-def get_students_from_group_for_ban(group_id: int) -> list[Student]:
+async def get_students_from_group_for_ban(group_id: int) -> list[Student]:
     """
     Return the all students from group, available for ban.
 
@@ -166,19 +176,22 @@ def get_students_from_group_for_ban(group_id: int) -> list[Student]:
     :return list[Student]: list of students from group, available for ban
         from database in the format list of objects of the class Student
     """
-    with Session() as session:
-        students = session.query(
-            Student
-            ).options(joinedload(Student.group)).filter(
-            and_(
-                Student.group_id == group_id,
-                Student.telegram_id.is_not(None),
-                ~exists().where(StudentBan.telegram_id == Student.telegram_id)
+    async with Session() as session:
+        students = await session.scalars(
+            select(Student).options(
+                joinedload(Student.group)
+                ).filter(
+                    and_(
+                        Student.group_id == group_id,
+                        Student.telegram_id.is_not(None),
+                        ~exists().where(
+                            StudentBan.telegram_id == Student.telegram_id
+                            )
             )
-        ).all()
-        return students
+        ))
+        return students.all()
 
-def get_students_from_group(group_id: int) -> list[Student]:
+async def get_students_from_group(group_id: int) -> list[Student]:
     """
     Return all students in this group
 
@@ -187,25 +200,19 @@ def get_students_from_group(group_id: int) -> list[Student]:
     :return list[Student]: list of students from group 
         from a database in the format list of objects of the class Student
     """
-    with Session() as session:
-        #students = session.query(Student).where(
-        #    Student.group_id == group_id
-        #).all()
-        #return students
-        # Получаем группу с заранее загруженными студентами
+    async with Session() as session:
         stmt = (
             select(Group)
             .options(selectinload(Group.students))
             .where(Group.id == group_id)
         )
-        group = session.execute(stmt).scalar_one_or_none()
-
+        group = await session.scalar(stmt)
         if group is None:
             return []
+        students = await getattr(group.awaitable_attrs, 'students')
+        return students
 
-        return group.students
-
-def get_group(group_id: int) -> Group:
+async def get_group(group_id: int) -> Group:
     """
     Return group from database
 
@@ -214,11 +221,11 @@ def get_group(group_id: int) -> Group:
     :return Group: group record from the database in the
         format of the Group class object
     """
-    with Session() as session:
-        result = session.query(Group).get(group_id)
+    async with Session() as session:
+        result = await session.get(Group, group_id)
         return result
 
-def get_discipline(discipline_id: int) -> Discipline:
+async def get_discipline(discipline_id: int) -> Discipline:
     """
     Return the discipline from database
 
@@ -227,11 +234,11 @@ def get_discipline(discipline_id: int) -> Discipline:
     :return Discipline: discipline record from the database in the
         format of the Discipline class object
     """
-    with Session() as session:
-        result = session.query(Discipline).get(discipline_id)
+    async with Session() as session:
+        result = await session.get(Discipline, discipline_id)
         return result
 
-def get_disciplines_assigned_to_student(
+async def get_disciplines_assigned_to_student(
         student_id: int, discipline_id: int
         ) -> AssignedDiscipline:
     """
@@ -243,14 +250,15 @@ def get_disciplines_assigned_to_student(
     :return AssignedDiscipline: assigned_discipline record from the database
         in the format of the AssignedDiscipline class object
     """
-    with Session() as session:
-        assigned_disciplines = session.query(AssignedDiscipline).filter(
+    async with Session() as session:
+        stmt = select(AssignedDiscipline).where(
             AssignedDiscipline.discipline_id == discipline_id,
             AssignedDiscipline.student_id == student_id
-        ).first()
+        )
+        assigned_disciplines = await session.scalar(stmt)
         return assigned_disciplines
 
-def get_student_from_id(student_id: int) -> Student:
+async def get_student_from_id(student_id: int) -> Student:
     """
     Return the student by his ID
     
@@ -259,10 +267,13 @@ def get_student_from_id(student_id: int) -> Student:
     :return Student: student record from the database 
         in the format of the Student class object
     """
-    with Session() as session:
-        return session.get(Student, student_id)
+    async with Session() as session:
+        student = await session.scalar(
+            select(Student).where(Student.id == student_id)
+            )
+        return student
 
-def write_test_result(lab_report: LabReport, input_record: QueueIn) -> None:
+async def write_test_result(lab_report: LabReport, input_record: QueueIn) -> None:
     """
     Record the test results.
 
@@ -274,57 +285,58 @@ def write_test_result(lab_report: LabReport, input_record: QueueIn) -> None:
 
     :return None:
     """
-    session = Session()
-    task_raw = QueueInRaw(**json.loads(input_record.data))
+    async with Session() as session:
+        async with session.begin():
+            task_raw = QueueInRaw(**json.loads(input_record.data))
 
-    student = session.query(Student).filter(
-        Student.telegram_id == input_record.telegram_id
-    ).first()
+            student = await session.scalar(
+                select(Student).where(Student.telegram_id == input_record.telegram_id)
+            )
 
-    assig_discipline = session.query(AssignedDiscipline).filter(
-        AssignedDiscipline.student_id == student.id,
-        AssignedDiscipline.discipline_id == task_raw.discipline_id
-    ).first()
+            assig_discipline = await session.scalar(
+                select(AssignedDiscipline).where(
+                    AssignedDiscipline.student_id == student.id,
+                    AssignedDiscipline.discipline_id == task_raw.discipline_id
+                )
+            )
 
-    hwork = utils.homeworks_from_json(assig_discipline.home_work)
+            hwork = utils.homeworks_from_json(assig_discipline.home_work)
 
-    lab = None
-    for it in hwork.home_works:
-        if lab_report.lab_id == it.number:
-            lab = it
-            break
+            lab = None
+            for it in hwork.home_works:
+                if lab_report.lab_id == it.number:
+                    lab = it
+                    break
 
-    task_done = 0
-    for task in lab.tasks:
-        task_done += 1 if task.is_done else 0
-        for task_result in lab_report.tasks:
-            if task.number == task_result.task_id:
-                task.amount_tries += 1
-                task.last_try_time = task_result.time
-                if not task.is_done and task_result.status:
-                    task.is_done = True
-                    task_done += 1
+            task_done = 0
+            for task in lab.tasks:
+                task_done += 1 if task.is_done else 0
+                for task_result in lab_report.tasks:
+                    if task.number == task_result.task_id:
+                        task.amount_tries += 1
+                        task.last_try_time = task_result.time
+                        if not task.is_done and task_result.status:
+                            task.is_done = True
+                            task_done += 1
 
-    lab.tasks_completed = task_done
+            lab.tasks_completed = task_done
 
-    too_slow = False
-    if (task_done == len(lab.tasks)) and not lab.is_done:
-        end_time = datetime.now()
-        lab.end_time = end_time
-        lab.is_done = True
-        if lab.deadline < end_time.date():
-            too_slow = True
+            too_slow = False
+            if (task_done == len(lab.tasks)) and not lab.is_done:
+                end_time = datetime.now()
+                lab.end_time = end_time
+                lab.is_done = True
+                if lab.deadline < end_time.date():
+                    too_slow = True
 
-        discipline = session.query(
-            Discipline
-            ).get(assig_discipline.discipline_id)
+                discipline = await session.scalar(
+                    select(Discipline).where(Discipline.id == assig_discipline.discipline_id)
+                )
+                scale_point = 100.0 / discipline.max_tasks
+                lab_points = task_done * scale_point
+                if too_slow:
+                    lab_points *= 0.5
 
-        scale_point = 100.0 / discipline.max_tasks
-        lab_points = task_done * scale_point
-        if too_slow:
-            lab_points *= 0.5
-
-        assig_discipline.point += lab_points
-    assig_discipline.home_work = utils.homeworks_to_json(hwork)
-    session.commit()
-    session.close()
+                assig_discipline.point += lab_points
+            assig_discipline.home_work = utils.homeworks_to_json(hwork)
+            await session.commit()

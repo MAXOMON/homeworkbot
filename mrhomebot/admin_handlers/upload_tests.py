@@ -32,7 +32,6 @@ async def handle_upload_tests(message: Message):
     """
     await _handle_upload_tests(message)
 
-
 @bot.message_handler(is_admin=False, commands=["uptest"])
 async def handle_no_upload_tests(message: Message):
     """
@@ -44,7 +43,6 @@ async def handle_no_upload_tests(message: Message):
     """
     await bot.send_message(message.chat.id, "Нет прав доступа!!!")
 
-
 async def _handle_upload_tests(message: Message):
     """
     Provide the user with a list of disciplines 
@@ -53,7 +51,7 @@ async def _handle_upload_tests(message: Message):
     :param message: the object containing information about
         an incoming message from the user.
     """
-    disciplines = admin_crud.get_all_disciplines()
+    disciplines = await admin_crud.get_all_disciplines()
     if len(disciplines) < 1:
         await bot.send_message(message.chat.id,
                                "В БД отсутствуют данные по дисциплинам!")
@@ -71,7 +69,6 @@ async def _handle_upload_tests(message: Message):
         "Выберите дисциплину для загрузки тестов:",
         reply_markup=markup
     )
-
 
 @bot.callback_query_handler(func=lambda call: "upTest_" in call.data)
 async def callback_upload_tests(call: CallbackQuery):
@@ -125,7 +122,7 @@ async def handle_upload_zip_tests(message: Message):
             discipline_id = data["discipline_id"]
         file_info = await bot.get_file(message.document.file_id)
         downloaded_file = await bot.download_file(file_info.file_path)
-        discipline = admin_crud.get_discipline(discipline_id)
+        discipline = await admin_crud.get_discipline(discipline_id)
         await save_test_files(discipline.path_to_test, downloaded_file)
         await finish_upload_file_message(
             message,

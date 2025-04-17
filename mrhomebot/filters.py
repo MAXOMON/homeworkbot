@@ -3,6 +3,7 @@ Contains filters that check the user's status and,
 in accordance with it, configure the system's behavior 
 for different interactions with the user.
 """
+import asyncio
 import telebot
 from telebot.asyncio_filters import AdvancedCustomFilter
 from telebot.callback_data import CallbackData, CallbackDataFilter
@@ -32,7 +33,8 @@ class IsAdmin(telebot.asyncio_filters.SimpleCustomFilter):
         :param message: the object containing information about
         an incoming message from the user
         """
-        return admin_crud.is_admin_no_teacher_mode(message.from_user.id)
+        result = await admin_crud.is_admin_no_teacher_mode(message.from_user.id)
+        return result
 
 
 class IsStudent(telebot.asyncio_filters.SimpleCustomFilter):
@@ -50,7 +52,8 @@ class IsStudent(telebot.asyncio_filters.SimpleCustomFilter):
         :param message: the object containing information about
         an incoming message from the user
         """
-        return student_crud.is_student(message.from_user.id)
+        result = await student_crud.is_student(message.from_user.id)
+        return result
 
 
 class IsTeacher(telebot.asyncio_filters.SimpleCustomFilter):
@@ -68,9 +71,10 @@ class IsTeacher(telebot.asyncio_filters.SimpleCustomFilter):
         :param message: the object containing information about
         an incoming message from the user
         """
-        if admin_crud.is_admin_and_teacher(message.from_user.id):
-            return admin_crud.is_admin_with_teacher_mode(message.from_user.id)
-        return teacher_crud.is_teacher(message.from_user.id)
+        result = await admin_crud.is_admin_and_teacher(message.from_user.id)
+        if result:
+            return await admin_crud.is_admin_with_teacher_mode(message.from_user.id)
+        return await teacher_crud.is_teacher(message.from_user.id)
 
 
 class AddStudentCallbackFilter(AdvancedCustomFilter):
@@ -87,4 +91,5 @@ class AddStudentCallbackFilter(AdvancedCustomFilter):
         :param call: an object that extends a standard message.
         :param config: add_student_factory
         """
+        await asyncio.sleep(0.0001)
         return config.check(query=call)

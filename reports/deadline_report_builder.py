@@ -9,7 +9,7 @@ from model.pydantic.home_work import DisciplineHomeWorks
 from model.pydantic.student_report import StudentReport
 
 
-def run_deadline_report_builder(
+async def run_deadline_report_builder(
         student_id: int,
         discipline_id: int) -> str:
     """
@@ -22,8 +22,8 @@ def run_deadline_report_builder(
     :return: information in string representation
     """
     student_report = StudentReport()
-    student = common_crud.get_student_from_id(student_id)
-    student_assigned_discipline = common_crud.get_disciplines_assigned_to_student(
+    student = await common_crud.get_student_from_id(student_id)
+    student_assigned_discipline = await common_crud.get_disciplines_assigned_to_student(
         student_id,
         discipline_id
     )

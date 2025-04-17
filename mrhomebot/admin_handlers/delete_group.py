@@ -41,7 +41,7 @@ async def callback_delete_group(call: CallbackQuery):
         Contains the ID of the group to be deleted.
     """
     group_id = int(call.data.split("_")[1])
-    admin_crud.delete_group(group_id)
+    await admin_crud.delete_group(group_id)
     await bot.edit_message_text(
         "Выбранная группа успешно удалена", 
         call.message.chat.id, 

@@ -15,7 +15,7 @@ async def create_teachers_button(message: Message, callback_prefix: str):
     :param callback_prefix: Typically, some administrative command 
         from the list of administrator command handlers.
     """
-    teachers = admin_crud.get_teachers()
+    teachers = await admin_crud.get_teachers()
     if len(teachers) < 1:
         await bot.send_message(message.chat.id,
                                "В БД отсутствуют преподаватели!")
@@ -83,7 +83,7 @@ async def create_groups_button(message: Message, callback_prefix: str):
     :param callback_prefix: Typically, some administrative command 
         from the list of administrator command handlers.
     """
-    groups = admin_crud.get_all_groups()
+    groups = await admin_crud.get_all_groups()
     if len(groups) < 1:
         await bot.send_message(
             message.chat.id,
@@ -149,7 +149,7 @@ async def create_discipline_button(message: Message, callback_prefix: str):
     :param callback_prefix: Typically, some administrative command 
         from the list of administrator command handlers.
     """
-    disciplines = admin_crud.get_all_disciplines()
+    disciplines = await admin_crud.get_all_disciplines()
     if len(disciplines) < 1:
         await bot.send_message(
             message.chat.id,

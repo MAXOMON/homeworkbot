@@ -1,9 +1,7 @@
 """Describes 'disciplines' table (academic disciplines)"""
 from typing import List
-
 from sqlalchemy import JSON, String
 from sqlalchemy.orm import mapped_column, Mapped, relationship
-
 from database.main_db.database import Base
 from model.main_db.discipline_group import association_discipline_to_group
 from model.main_db.teacher_discipline import association_teacher_to_discipline

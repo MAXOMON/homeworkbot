@@ -74,7 +74,7 @@ async def handle_upload_discipline(message: Message):
         file_info = await bot.get_file(message.document.file_id)
         downloaded_file = await bot.download_file(file_info.file_path)
         discipline = load_discipline(downloaded_file)
-        admin_crud.add_discipline(discipline)
+        await admin_crud.add_discipline(discipline)
         path = Path.cwd()
         Path(path.joinpath(discipline.path_to_test)).mkdir(parents=True,
                                                            exist_ok=True)

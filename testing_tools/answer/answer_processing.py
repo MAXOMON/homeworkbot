@@ -49,14 +49,14 @@ class AnswerProcessing:
         """
         while True:
             await asyncio.sleep(2)
-            if queue_out_crud.is_not_empty():
-                records = queue_out_crud.get_all_records()
+            if await queue_out_crud.is_not_empty():
+                records = await queue_out_crud.get_all_records()
                 if self.slice_size is not None:
                     if self.slice_size < len(records):
                         records = records[:self.slice_size]
                 await self.__processing_records(records)
-            while rejected_crud.is_not_empty():
-                record = rejected_crud.get_first_record()
+            while await rejected_crud.is_not_empty():
+                record = await rejected_crud.get_first_record()
                 await asyncio.sleep(1)
                 rejected = TestRejectedFiles(**json.loads(record.data))
                 text = f"<i>{rejected.description}:</i>"
@@ -94,4 +94,4 @@ class AnswerProcessing:
                 text=text,
                 parse_mode='HTML'
             )
-            queue_out_crud.delete_record(record.id)
+            await queue_out_crud.delete_record(record.id)

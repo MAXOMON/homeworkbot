@@ -5,8 +5,8 @@ from pydantic import BaseModel
 
 class RejectedType(IntEnum):
     """Reason, on select, for which answer files may be rejected"""
-    TemplateError = 0  # не вышел названием
-    KeyWordsError = 1  # запрещённые или отсутствующие ключевые слова
+    TEMPLATEERROR = 0  # не вышел названием
+    KEYWORDSERROR = 1  # запрещённые или отсутствующие ключевые слова
 
 
 class TestRejectedFiles(BaseModel):

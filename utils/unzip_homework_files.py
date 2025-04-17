@@ -5,8 +5,8 @@ to the directory in which the archive will be saved.
 """
 from pathlib import Path
 from zipfile import ZipFile
-from database.main_db.common_crud import get_group
-from database.main_db.student_crud import get_student_by_tg_id
+from database.main_db import common_crud
+from database.main_db import student_crud
 
 
 async def save_homework_file(
@@ -28,8 +28,8 @@ async def save_homework_file(
 
     :return: list of paths to unpacked response files
     """
-    student = get_student_by_tg_id(user_tg_id)
-    group = get_group(student.group_id)
+    student = await student_crud.get_student_by_tg_id(user_tg_id)
+    group = await common_crud.get_group(student.group_id)
 
     path = Path.cwd()
     path = path.joinpath(

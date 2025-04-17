@@ -1,7 +1,7 @@
 """
 This module contains various checking functions that are specific to teachers.
 """
-from sqlalchemy import and_, select
+from sqlalchemy.future import select
 from database.main_db.database import Session
 from model.main_db.admin import Admin
 from model.main_db.discipline import Discipline
@@ -10,7 +10,7 @@ from model.main_db.student import Student
 from model.main_db.teacher import Teacher
 
 
-def is_teacher(telegram_id: int) -> bool:
+async def is_teacher(telegram_id: int) -> bool:
     """
     Check if the user is a teacher
 
@@ -18,13 +18,15 @@ def is_teacher(telegram_id: int) -> bool:
 
     :return bool: True IF is a theacher ELSE False
     """
-    with Session() as session:
-        teacher = session.query(Teacher).filter(
-            Teacher.telegram_id == telegram_id
-        ).first()
+    async with Session() as session:
+        teacher = await session.scalar(
+            select(Teacher).where(
+                Teacher.telegram_id == telegram_id
+            )
+        )
         return teacher is not None
 
-def get_assign_group_discipline(
+async def get_assign_group_discipline(
         teacher_tg_id: int, group_id: int) -> list[Discipline]:
     """
     Get a list of disciplines that are assigned to a teacher
@@ -35,24 +37,24 @@ def get_assign_group_discipline(
 
     :return list[Discipline]: list of objects of class Discipline
     """
-    with Session() as session:
-        teacher = session.query(Teacher).filter(
-            Teacher.telegram_id == teacher_tg_id
-        ).first()
+    async with Session() as session:
+        teacher = await session.scalar(
+            select(Teacher).where(
+                Teacher.telegram_id == teacher_tg_id
+            )
+        )
+        disciplines_from_teacher = await getattr(teacher.awaitable_attrs, 'disciplines')
+        teacher_disciplines = {it.short_name for it in disciplines_from_teacher}
 
-        teacher_disciplines = {it.short_name for it in teacher.disciplines}
+        group = await session.get(Group, group_id)
+        disciplines_from_group = await getattr(group.awaitable_attrs, 'disciplines')
+        group_disciplines = {it.short_name for it in disciplines_from_group}
 
-        group = session.query(Group).filter(
-            Group.id == group_id
-        ).first()
-
-        group_disciplines = {it.short_name for it in group.disciplines}
-
-        return [it for it in teacher.disciplines
+        return [it for it in disciplines_from_teacher
                 if it.short_name in teacher_disciplines.intersection(
                     group_disciplines)]
 
-def switch_teacher_mode_to_admin(teacher_tg_id: int) -> None:
+async def switch_teacher_mode_to_admin(teacher_tg_id: int) -> None:
     """
     Switch from teacher mode to administrator mode
     
@@ -60,12 +62,13 @@ def switch_teacher_mode_to_admin(teacher_tg_id: int) -> None:
 
     :return None:
     """
-    with Session() as session:
-        admin = session.get(Admin, teacher_tg_id)
-        admin.teacher_mode = False
-        session.commit()
+    async with Session() as session:
+        async with session.begin():
+            admin = await session.get(Admin, teacher_tg_id)
+            admin.teacher_mode = False
+            await session.commit()
 
-def get_assign_groups(teacher_tg_id: int) -> list[Group]:
+async def get_assign_groups(teacher_tg_id: int) -> list[Group]:
     """
     Get a list of groups taught by this teacher
 
@@ -73,14 +76,15 @@ def get_assign_groups(teacher_tg_id: int) -> list[Group]:
 
     :return list[Group]: list of objects of class Group
     """
-    with Session() as session:
+    async with Session() as session:
         smt = select(Teacher).where(
             Teacher.telegram_id == teacher_tg_id
         )
-        teacher = session.scalars(smt).first()
-        return teacher.groups
+        teacher = await session.scalar(smt)
+        groups = await getattr(teacher.awaitable_attrs, 'groups')
+        return groups
 
-def get_teacher_disciplines(teacher_tg_id: int) -> list[Discipline]:
+async def get_teacher_disciplines(teacher_tg_id: int) -> list[Discipline]:
     """
     Get a list of disciplines assigned to a teacher
 
@@ -88,14 +92,15 @@ def get_teacher_disciplines(teacher_tg_id: int) -> list[Discipline]:
 
     :return list[Discipline]: list of objects of class Discipline
     """
-    with Session() as session:
+    async with Session() as session:
         smt = select(Teacher).where(
             Teacher.telegram_id == teacher_tg_id
         )
-        teacher = session.scalars(smt).first()
-        return teacher.disciplines
+        teacher = await session.scalar(smt)
+        disciplines = await getattr(teacher.awaitable_attrs, 'disciplines')
+        return disciplines
 
-def get_auth_students(group_id: int) -> list[Student]:
+async def get_auth_students(group_id: int) -> list[Student]:
     """
     Return the list of authenticated students
 
@@ -103,11 +108,11 @@ def get_auth_students(group_id: int) -> list[Student]:
 
     :return list[Student]: list of objects of class Student
     """
-    with Session() as session:
-        students = session.query(Student).filter(
-            and_(
+    async with Session() as session:
+        students = await session.scalars(
+            select(Student).where(
                 Student.group_id == group_id,
                 Student.telegram_id.is_not(None)
             )
-        ).all()
-        return students
+        )
+        return students.all()

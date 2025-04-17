@@ -49,10 +49,10 @@ class TaskProcessing:
         """
         while True:
             await asyncio.sleep(2)
-            if queue_in_crud.is_not_empty():
-                record = queue_in_crud.get_first_record()
+            if await queue_in_crud.is_not_empty():
+                record = await queue_in_crud.get_first_record()
                 await asyncio.gather(
-                    asyncio.to_thread(
+                    await asyncio.to_thread(
                         _run_prepare_docker,
                         record,
                         self.temp_folder_path
@@ -60,7 +60,7 @@ class TaskProcessing:
                 )
 
 
-def _run_prepare_docker(record: QueueIn, temp_folder_path: Path) -> None:
+async def _run_prepare_docker(record: QueueIn, temp_folder_path: Path) -> None:
     """
     The function of preparing files for a container and its subsequent launch
 
@@ -70,13 +70,13 @@ def _run_prepare_docker(record: QueueIn, temp_folder_path: Path) -> None:
         for creating docker containers will be formed
     """
     folder_builder = FolderBuilder(temp_folder_path, record)
-    docker_folder_path = folder_builder.build()
+    docker_folder_path = await folder_builder.build()
     if folder_builder.has_rejected_files():
-        rejected_crud.add_record(
+        await rejected_crud.add_record(
             record.telegram_id,
             record.chat_id,
             TestRejectedFiles(
-                type=RejectedType.TemplateError,
+                type=RejectedType.TEMPLATEERROR,
                 description='Имя файла(-ов) не соответствует \
                     шаблону для тестирования',
                 files=folder_builder.get_rejected_file_names()
@@ -88,11 +88,11 @@ def _run_prepare_docker(record: QueueIn, temp_folder_path: Path) -> None:
     keywords_controller = KeyWordsController(docker_folder_path)
     keywords_controller.run()
     if keywords_controller.has_rejected_files():
-        rejected_crud.add_record(
+        await rejected_crud.add_record(
             record.telegram_id,
             record.chat_id,
             TestRejectedFiles(
-                type=RejectedType.KeyWordsError,
+                type=RejectedType.KEYWORDSERROR,
                 description="В файле(-ах) имеются запрещенные \
                     ключевые слова, " +
                     "либо не используются необходимые для решения задачи",
@@ -122,11 +122,11 @@ def _run_prepare_docker(record: QueueIn, temp_folder_path: Path) -> None:
     except LabReportException:
         print("Произошла ошибка, при чтении docker.logs(output)")
 
-    common_crud.write_test_result(lab_report, record)
-    _send_test_result_to_bot(lab_report, record)
+    await common_crud.write_test_result(lab_report, record)
+    await _send_test_result_to_bot(lab_report, record)
 
 
-def _send_test_result_to_bot(lab_report: LabReport, record: QueueIn) -> None:
+async def _send_test_result_to_bot(lab_report: LabReport, record: QueueIn) -> None:
     """
     Function of sending the test result to the intermediate database
 
@@ -156,7 +156,7 @@ def _send_test_result_to_bot(lab_report: LabReport, record: QueueIn) -> None:
                     description=it.description
                 )
             )
-    queue_out_crud.add_record(
+    await queue_out_crud.add_record(
         record.telegram_id,
         record.chat_id,
         result_report

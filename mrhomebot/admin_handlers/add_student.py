@@ -68,7 +68,7 @@ async def _handle_add_student(message: Message):
     :param message: the object containing information about
         an incoming message from the user.
     """
-    groups = admin_crud.get_all_groups()
+    groups = await admin_crud.get_all_groups()
     if len(groups) < 1:
         await bot.send_message(
             message.chat.id,
@@ -135,7 +135,7 @@ async def student_name_correct(message: Message):
     full_name = message.text.strip()
 
     if len(full_name.split(" ")) == 3:
-        admin_crud.add_student(full_name, selected_group_id)
+        await admin_crud.add_student(full_name, selected_group_id)
         await bot.send_message(message.chat.id, "Студент успешно добавлен!")
         await bot.delete_state(message.from_user.id, message.chat.id)
     else:

@@ -46,7 +46,7 @@ async def callback_download_answers(call: CallbackQuery):
     match type_callback:
         case "dowTAnswersDis":
             discipline_id = int(call.data.split("_")[1])
-            discipline = common_crud.get_discipline(discipline_id)
+            discipline = await common_crud.get_discipline(discipline_id)
             path = Path.cwd().joinpath(discipline.path_to_answer)
             dirs = [it for it in path.iterdir() if it.is_dir()]
             if not dirs:
@@ -56,7 +56,7 @@ async def callback_download_answers(call: CallbackQuery):
                     call.message.id
                 )
             else:
-                teacher_groups = teacher_crud.get_assign_groups(
+                teacher_groups = await teacher_crud.get_assign_groups(
                     call.from_user.id
                     )
                 dirs = [
@@ -81,7 +81,7 @@ async def callback_download_answers(call: CallbackQuery):
         case "dowTAnswersGr":
             group_name = call.data.split("_")[1]
             discipline_id = int(call.data.split("_")[2])
-            discipline = common_crud.get_discipline(discipline_id)
+            discipline = await common_crud.get_discipline(discipline_id)
             path = Path.cwd().joinpath(discipline.path_to_answer)
             path = path.joinpath(group_name)
             await _download_answer(call, path)
@@ -109,7 +109,7 @@ async def _download_answer(call: CallbackQuery, path_to_group_folder: Path):
     )
 
     path_to_archive = await asyncio.gather(
-        asyncio.to_thread(create_answers_archive, path_to_group_folder)
+        await asyncio.to_thread(create_answers_archive, path_to_group_folder)
     )
 
     await bot.edit_message_text(

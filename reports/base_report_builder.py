@@ -2,6 +2,7 @@
 The module contains the main class and functionality 
 for building various reports (academic performance).
 """
+from asyncinit import asyncinit
 import json
 import os
 from datetime import datetime
@@ -23,7 +24,7 @@ class ReportFieldEnum(IntEnum):
     TASK_RATIO = 6
     NEXT = 7
 
-
+@asyncinit
 class BaseReportBuilder:
     """Base class that lays the framework of the report"""
     RED_FILL = PatternFill(
@@ -35,7 +36,7 @@ class BaseReportBuilder:
         end_color='006633',
         fill_type='solid')
 
-    def __init__(self,
+    async def __init__(self,
                  group_id: int,
                  discipline_id: int,
                  prefix_file: str,
@@ -48,9 +49,10 @@ class BaseReportBuilder:
         """
         self.group_id = group_id
         self.discipline_id = discipline_id
-
-        group = common_crud.get_group(group_id)
-        discipline = common_crud.get_discipline(discipline_id)
+        self.wb = Workbook()
+        # ====================================================================
+        group = await common_crud.get_group(group_id)
+        discipline = await common_crud.get_discipline(discipline_id)
 
         self.group_name = group.group_name
         self.discipline_name = discipline.short_name
@@ -60,9 +62,9 @@ class BaseReportBuilder:
         self.__file_path = Path(
             path.joinpath(f'{discipline.short_name}_{prefix_file}_{group.group_name}_.{extension}')
         )
-        self.wb = Workbook()
+        return self
 
-    def build_report(self) -> None:
+    async def build_report(self) -> None:
         """
         start creating and filling a basic report
         
@@ -71,10 +73,10 @@ class BaseReportBuilder:
         worksheet = self.wb.active
         worksheet.title = self.discipline_name
 
-        students = common_crud.get_students_from_group(self.group_id)
+        students = await common_crud.get_students_from_group(self.group_id)
         row = 1
         for student in students:
-            assigned_discipline = common_crud.get_disciplines_assigned_to_student(
+            assigned_discipline = await common_crud.get_disciplines_assigned_to_student(
                 student.id,
                 self.discipline_id)
             home_works = DisciplineHomeWorks(

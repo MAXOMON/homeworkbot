@@ -53,21 +53,21 @@ async def handle_start(message: Message):
     :param message: the object containing information about
         an incoming message from the user.
     """
-    user = common_crud.user_verification(message.from_user.id)
+    user = await common_crud.user_verification(message.from_user.id)
     match user:
         case UserEnum.ADMIN:
             await bot.send_message(
                 message.chat.id,
                 "<b>Hello, Admin!</b>",
                 parse_mode="HTML",
-                reply_markup=admin_keyboard(message)
+                reply_markup=await admin_keyboard(message)
             )
         case UserEnum.TEACHER:
             await bot.send_message(
                 message.chat.id,
                 "<i>Hello, Teacher!</i>",
                 parse_mode="HTML",
-                reply_markup=create_teacher_keyboard(message)
+                reply_markup=await create_teacher_keyboard(message)
             )
         case UserEnum.STUDENT:
             await bot.send_message(
@@ -77,7 +77,7 @@ async def handle_start(message: Message):
                 reply_markup=student_keyboard(message)
             )
         case _:
-            chats = common_crud.get_chats()
+            chats = await common_crud.get_chats()
             user_in_chat = False
             for chat_id in chats:
                 user_in_chat = await is_subscribed(
@@ -168,8 +168,8 @@ async def input_full_name(message: Message):
             'Пожалуйста, введите полное ФИО! Например: Иванов Иван Иванович',
         )
     else:
-        if student_crud.has_more_students(full_name):
-            groups = student_crud.get_groups_of_students_with_same_name(
+        if await student_crud.has_more_students(full_name):
+            groups = await student_crud.get_groups_of_students_with_same_name(
                 full_name)
             groups_inline_buttons = [
                 InlineKeyboardButton(
@@ -190,8 +190,8 @@ async def input_full_name(message: Message):
                 "Выберите группу, в которой вы учитесь:",
                 reply_markup=markup
             )
-        elif student_crud.has_student(full_name):
-            student_crud.set_telegram_id(full_name, message.from_user.id)
+        elif await student_crud.has_student(full_name):
+            await student_crud.set_telegram_id(full_name, message.from_user.id)
             await bot.send_message(
                 message.chat.id,
                 "Вы успешно авторизовались!",
@@ -206,6 +206,13 @@ async def input_full_name(message: Message):
 
 @bot.callback_query_handler(func=lambda call: "FULL_NAME_WITH_" in call.data)
 async def input_full_name_with_group(call: CallbackQuery):
+    """
+    Add a student with a similar name from a specific group.
+
+    :param call: an object that extends the standard message.
+        Contains information about the full name 
+        and group in which the student studies.
+    """
     group_id = int(call.data.split('_')[-1])
     async with bot.retrieve_data(
         call.from_user.id,
@@ -213,7 +220,7 @@ async def input_full_name_with_group(call: CallbackQuery):
     ) as sel_data:
         full_name = sel_data['full_name']
     telegram_id = call.from_user.id
-    student_crud.set_telegram_id_on_group_id(full_name,
+    await student_crud.set_telegram_id_on_group_id(full_name,
                                              group_id,
                                              telegram_id)
     await bot.send_message(

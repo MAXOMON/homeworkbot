@@ -20,7 +20,6 @@ def load_disciplines_config(file_path: str) -> DisciplinesConfig:
         data = json.load(json_file)
         return DisciplinesConfig(**data)
 
-
 def disciplines_config_to_json(data: DisciplinesConfig) -> str:
     """
     Return converted data, from DisciplinesConfig to JSON-like string format

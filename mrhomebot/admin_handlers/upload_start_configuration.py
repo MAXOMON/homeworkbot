@@ -9,6 +9,7 @@ from database.main_db import admin_crud
 from database.main_db.crud_exceptions import DisciplineNotFoundException,\
     GroupAlreadyExistException, DisciplineAlreadyExistException,\
     GroupNotFoundException
+from database.main_db.database import Session
 from model.pydantic.db_start_data import DbStartData
 from mrhomebot.admin_handlers.utils import start_upload_file_message,\
     finish_upload_file_message
@@ -80,8 +81,9 @@ async def handle_upload_discipline(message: Message):
             downloaded_file = await bot.download_file(file_info.file_path)
             data = json.loads(downloaded_file)
             db_start_data = DbStartData(**data)
-
-            admin_crud.remote_start_db_fill(db_start_data)
+            async with Session() as session:
+                await admin_crud.remote_start_db_fill(db_start_data, session)
+                await session.commit()
             path = Path.cwd()
             for discipline in db_start_data.disciplines:
                 Path(path.joinpath(

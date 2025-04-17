@@ -11,7 +11,7 @@ from database.queue_db.database_creator import create_queue_tables
 from model.pydantic.db_creator_settings import DbCreatorSettings
 
 
-def init_app() -> None:
+async def init_app() -> None:
     """
     Creates the main and intermediate databases, 
     as well as a directory where various reports will be stored, 
@@ -31,12 +31,12 @@ def init_app() -> None:
             os.getenv("PATH_TO_DISCIPLINES_DATA"),
             os.getenv("PATH_TO_INITIALIZATION_DATA")
         )
-        create_main_tables(settings)
+        await create_main_tables(settings)
 
     if not database_exists(queue_engine.url):
         create_database(queue_engine.url)
-        create_queue_tables()
+        await create_queue_tables()
 
     path = Path.cwd()
-    Path(path.joinpath(os.getenv("TEMP_REPORT_DIR"))).mkdir(parents=True,
-                                                            exist_ok=True)
+    Path(path.joinpath(os.getenv("TEMP_REPORT_DIR"))).mkdir(
+        parents=True, exist_ok=True)

@@ -22,11 +22,11 @@ async def callback_nearest_deadline(call: CallbackQuery):
     match type_callback:
         case "nearestDeadline":
             discipline_id = int(call.data.split("_")[1])
-            student = student_crud.get_student_by_tg_id(call.from_user.id)
+            student = await student_crud.get_student_by_tg_id(call.from_user.id)
             await __create_report(call, student.id, discipline_id)
         case _:
             await bot.edit_message_text(
-                f"Ошибка nearest_deadline{call.data=}",
+                "Ошибка в nearest_deadline",
                 call.message.chat.id,
                 call.message.id
             )
@@ -52,7 +52,7 @@ async def __create_report(
         call.message.id
     )
     report = await asyncio.gather(
-        asyncio.to_thread(run_deadline_report_builder,
+        await asyncio.to_thread(run_deadline_report_builder,
                           student_id, discipline_id)
     )
     student_report = report[0]

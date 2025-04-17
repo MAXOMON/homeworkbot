@@ -29,7 +29,7 @@ class BanMiddleware(BaseMiddleware):
             an incoming message from the user.
         :param data: Any
         """
-        if common_crud.is_ban(message.from_user.id):
+        if await common_crud.is_ban(message.from_user.id):
             await self.bot.send_message(
                 message.chat.id,
                 "Функциональность бота недоступна для \
@@ -86,7 +86,7 @@ class StudentFloodMiddleware(BaseMiddleware):
             an incoming message from the user.
         :param data: Any
         """
-        if student_crud.is_student(message.from_user.id):
+        if await student_crud.is_student(message.from_user.id):
             if message.text in ["Загрузить ответ",
                                 "Ближайший дедлайн",
                                 "Успеваемость"]:

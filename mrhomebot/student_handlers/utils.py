@@ -18,7 +18,7 @@ async def create_student_disciplines_button(message: Message, prefix: str):
     :param prefix: Text representation of a command that 
         is used in various handlers, eg 'nearestDeadline'...
     """
-    disciplines = student_crud.get_assign_disciplines(message.from_user.id)
+    disciplines = await student_crud.get_assign_disciplines(message.from_user.id)
     if len(disciplines) < 1:
         await bot.send_message(
             message.chat.id,

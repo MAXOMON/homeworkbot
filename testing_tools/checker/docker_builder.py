@@ -3,6 +3,7 @@ This module contains the docker image builder, and is also responsible
 for launching them and saving reports of their work.
 """
 import json
+import time
 import uuid
 from pathlib import Path
 from python_on_whales import docker
@@ -65,8 +66,17 @@ class DockerBuilder:
 
         with docker.build(context_path=self.test_dir,
                           tags=self.tag_name) as my_image:
-            with docker.run(self.tag_name,
+            with docker.container.run(self.tag_name,
                             name=self.tag_name,
                             detach=True) as output:
-                self.logs = docker.container.logs(output) \
-                    or docker.container.logs(output.id)
+                while True:
+                    container_info = docker.container.inspect(output.id)
+                    status = container_info.state.status
+                    if status in ["exited", "dead"]:
+                        break
+                    time.sleep(1)
+                self.logs = docker.container.logs(
+                    container=output
+                    ) or docker.container.logs(
+                        container=output.id
+                        )

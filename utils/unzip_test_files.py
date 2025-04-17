@@ -28,9 +28,6 @@ async def save_test_files(path_to_test: str, downloaded_file: bytes) -> None:
             else:
                 shutil.rmtree(file_path)
 
-        #for file_path in os.listdir(path):
-        #    shutil.rmtree(file_path)
-
     with open(path.joinpath("archive.zip"), "wb") as new_file:
         new_file.write(downloaded_file)
     with ZipFile(path.joinpath("archive.zip")) as zipObj:

@@ -64,10 +64,15 @@ async def chat_correct(message: Message):
     """
     msg = message.text
     if msg[0] == "-" and msg[1:].isdigit() and int(msg) < 0:
-        admin_crud.add_chat(int(msg))
-        await bot.send_message(message.chat.id,
+        try:
+            await admin_crud.add_chat(int(msg))
+            await bot.send_message(message.chat.id,
                                "Групповой чат успешно добавлен!")
-        await bot.delete_state(message.from_user.id, message.chat.id)
+            await bot.delete_state(message.from_user.id, message.chat.id)
+        except:
+            await bot.send_message(message.chat.id,
+                               "Чат уже существует!")
+            await bot.delete_state(message.from_user.id, message.chat.id)
     else:
         await bot.send_message(message.chat.id,
                                "Введите корректный id группового чата!")

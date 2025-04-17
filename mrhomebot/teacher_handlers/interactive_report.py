@@ -20,7 +20,7 @@ __report_prefix = [
 
 def __is_interactive_prefix_callback(data: str) -> bool:
     """
-    Check if such a prefix is ​in the list of commands available 
+    Check if such a prefix is in the list of commands available 
     for receiving an interactive report.
 
     :param data: eg message.text
@@ -52,7 +52,7 @@ async def callback_interactive_report(call: CallbackQuery):
                 call.message.id
             )
             group_id = int(call.data.split("_")[1])
-            disciplines = teacher_crud.get_assign_group_discipline(
+            disciplines = await teacher_crud.get_assign_group_discipline(
                 call.from_user.id,
                 group_id
             )
@@ -80,7 +80,7 @@ async def callback_interactive_report(call: CallbackQuery):
         case 'interactiveDisRep':
             group_id = int(call.data.split("_")[1])
             discipline_id = int(call.data.split("_")[2])
-            students = teacher_crud.get_auth_students(group_id)
+            students = await teacher_crud.get_auth_students(group_id)
             if len(students) < 1:
                 await bot.send_message(
                     call.message.chat.id,
@@ -131,7 +131,7 @@ async def __create_report(
         call.message.id
     )
     report = await asyncio.gather(
-        asyncio.to_thread(run_interactive_report_builder,
+        await asyncio.to_thread(run_interactive_report_builder,
                           student_id,
                           discipline_id
                           )

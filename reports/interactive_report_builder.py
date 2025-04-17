@@ -9,7 +9,7 @@ from model.pydantic.home_work import DisciplineHomeWorks
 from model.pydantic.student_report import StudentReport
 
 
-def run_interactive_report_builder(
+async def run_interactive_report_builder(
         student_id: int,
         discipline_id: int) -> StudentReport:
     """
@@ -21,8 +21,9 @@ def run_interactive_report_builder(
     :return StudentReport: StudentReport data structure
     """
     student_report = StudentReport()
-    student = common_crud.get_student_from_id(student_id)
-    student_assigned_discipline = common_crud.get_disciplines_assigned_to_student(
+    student = await common_crud.get_student_from_id(student_id)
+
+    student_assigned_discipline = await common_crud.get_disciplines_assigned_to_student(
         student_id,
         discipline_id)
 
@@ -43,7 +44,7 @@ def run_interactive_report_builder(
         for task in work.tasks:
             if task.is_done:
                 student_report.task_completed += 1
-    discipline = common_crud.get_discipline(discipline_id)
+    discipline = await common_crud.get_discipline(discipline_id)
     if student_report.task_completed != 0:
         student_report.task_ratio = \
             student_report.task_completed / discipline.max_tasks

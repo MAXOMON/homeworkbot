@@ -17,7 +17,7 @@ async def create_teacher_groups_button(message: Message, callback_prefix: str):
     :param callback_prefix: Text representation of a command that 
         is used in various handlers, eg 'interactiveGrRep'...
     """
-    groups = teacher_crud.get_assign_groups(message.from_user.id)
+    groups = await teacher_crud.get_assign_groups(message.from_user.id)
     if len(groups) < 1:
         await bot.send_message(message.chat.id, "В БД отсутствуют группы!")
         return
@@ -49,7 +49,7 @@ async def create_teacher_discipline_button(
     :param callback_prefix: Text representation of a command that 
         is used in various handlers, eg 'interactiveGrRep'...
     """
-    disciplines = teacher_crud.get_teacher_disciplines(message.from_user.id)
+    disciplines = await teacher_crud.get_teacher_disciplines(message.from_user.id)
     if len(disciplines) < 1:
         await bot.send_message(message.chat.id, "В БД отсутствуют дисциплины!")
         return

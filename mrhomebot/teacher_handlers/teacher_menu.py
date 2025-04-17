@@ -1,9 +1,10 @@
 """Module for processing various teacher commands"""
 from enum import Enum, auto
 from telebot.types import Message, ReplyKeyboardMarkup, KeyboardButton
-from database.main_db.admin_crud import is_admin
+from database.main_db import admin_crud
 from database.main_db import teacher_crud
 from mrhomebot.admin_handlers import admin_menu
+from mrhomebot.admin_handlers.reset_teacher_mode import handle_reset_with_teacher
 from mrhomebot.admin_handlers.unban_student import create_unban_student_buttons
 from mrhomebot.configuration import bot
 from mrhomebot.teacher_handlers.utils import create_teacher_groups_button, \
@@ -27,6 +28,7 @@ class TeacherCommand(Enum):
     DOWNLOAD_ANSWER = auto()
     INTERACTIVE_REPORT = auto()
     SWITCH_TO_ADMIN = auto()
+    RESET = auto()
 
 
 __teacher_commands = {
@@ -37,10 +39,11 @@ __teacher_commands = {
     TeacherCommand.DOWNLOAD_FULL_REPORT: "Полный отчёт",
     TeacherCommand.DOWNLOAD_SHORT_REPORT: "Короткий отчёт",
     TeacherCommand.DOWNLOAD_FINISH_REPORT: "Итоговый отчёт",
-    TeacherCommand.SWITCH_TO_ADMIN: "\U0001F977"
+    TeacherCommand.SWITCH_TO_ADMIN: "\U0001F977",
+    TeacherCommand.RESET: 'Сброс ошибки'
 }
 
-def create_teacher_keyboard(
+async def create_teacher_keyboard(
         message: Message | None = None) -> ReplyKeyboardMarkup:
     """
     Generates a teacher menu list,
@@ -69,7 +72,7 @@ def create_teacher_keyboard(
         KeyboardButton(__teacher_commands[TeacherCommand.BAN_STUDENT]),
         KeyboardButton(__teacher_commands[TeacherCommand.UNBAN_STUDENT])
     ]
-    if is_admin(message.from_user.id):
+    if await admin_crud.is_admin(message.from_user.id):
         footer_buttons.append(
             KeyboardButton(__teacher_commands[TeacherCommand.SWITCH_TO_ADMIN])
         )
@@ -111,13 +114,14 @@ async def switch_teacher_to_admin_menu(message: Message):
     :param message: the object containing information about
         an incoming message from the user.
     """
-    teacher_crud.switch_teacher_mode_to_admin(message.from_user.id)
+    await teacher_crud.switch_teacher_mode_to_admin(message.from_user.id)
+    markup = await admin_menu.first_admin_keyboard(message)
     await bot.send_message(
         message.chat.id,
         "Переключение в режим админа",
         parse_mode='HTML',
         disable_web_page_preview=True,
-        reply_markup=admin_menu.first_admin_keyboard(message)
+        reply_markup=markup
     )
 
 @bot.message_handler(
@@ -149,3 +153,5 @@ async def handle_commands(message: Message):
             await create_teacher_groups_button(message, 'interactiveGrRep')
         case TeacherCommand.DOWNLOAD_ANSWER:
             await create_teacher_discipline_button(message, 'dowTAnswersDis')
+        case TeacherCommand.RESET:
+            await handle_reset_with_teacher(message)

@@ -84,7 +84,7 @@ async def handle_upload_discipline(message: Message):
         group_data = json.loads(downloaded_file)
         groups_list = [StudentsGroup(**it) for it in group_data]
         try:
-            admin_crud.add_students_group(groups_list)
+            await admin_crud.add_students_group(groups_list)
             await finish_upload_file_message(
                 message,
                 result_message,

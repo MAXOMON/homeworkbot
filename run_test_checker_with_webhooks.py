@@ -1,9 +1,7 @@
 """
-The module for launching both the bot 
-and the testing verification system in one process.
-
+Module for launching the response verification subsystem in a separate process
 Example:
-    $ python run_system_in_one_process.py
+    $ python run_test_checker_with_webhooks.py
 """
 import asyncio
 import os
@@ -25,13 +23,10 @@ async def main():
     temp_path = Path.cwd()
     temp_path = Path(temp_path.joinpath(os.getenv("TEMP_REPORT_DIR")))
     dockers_run = int(os.getenv("AMOUNT_DOKER_RUN"))
-    await bot.delete_webhook()
     await asyncio.gather(
-        bot.infinity_polling(request_timeout=190),
         AnswerProcessing(bot).run(),
         TaskProcessing(temp_path, dockers_run).run(),
     )
-
 
 
 if __name__ == '__main__':

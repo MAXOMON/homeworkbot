@@ -49,7 +49,7 @@ async def callback_assign_teacher_to_discipline(call: CallbackQuery):
     match type_callback:
         case "assignTeacherDis":
             teacher_id = int(call.data.split("_")[1])
-            disciplines = admin_crud.get_not_assign_teacher_discipline(
+            disciplines = await admin_crud.get_not_assign_teacher_discipline(
                 teacher_id
                 )
             if len(disciplines) < 1:
@@ -75,7 +75,7 @@ async def callback_assign_teacher_to_discipline(call: CallbackQuery):
         case "assignDiscT":
             discipline_id = int(call.data.split("_")[1])
             teacher_id = int(call.data.split("_")[2])
-            admin_crud.assign_teacher_to_discipline(teacher_id, discipline_id)
+            await admin_crud.assign_teacher_to_discipline(teacher_id, discipline_id)
             await bot.edit_message_text(
                 "Дисциплина назначена преподавателю",
                 call.message.chat.id,

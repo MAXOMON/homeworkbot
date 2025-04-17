@@ -48,11 +48,11 @@ async def callback_ban_student(call: CallbackQuery):
     match type_callback:
         case "groupBan":
             group_id = int(call.data.split("_")[1])
-            students = common_crud.get_students_from_group_for_ban(group_id)
+            students = await common_crud.get_students_from_group_for_ban(group_id)
             await create_callback_students_button(call, students, "studentBan")
         case "studentBan":
             telegram_id = int(call.data.split("_")[1])
-            common_crud.ban_student(telegram_id)
+            await common_crud.ban_student(telegram_id)
             await bot.edit_message_text(
                 "Студент добавлен в бан-лист",
                 call.message.chat.id,

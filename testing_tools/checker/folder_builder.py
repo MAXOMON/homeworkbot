@@ -39,14 +39,14 @@ class FolderBuilder:
         """
         return self.answer.lab_number
 
-    def build(self) -> Path:
+    async def build(self) -> Path:
         """
         Forms a path in a pre-defined directory where the student's 
             answers will be located. And copies his files with the work there.
 
         :return Path: group_name/answers/student_full_name--uuid/...
         """
-        discipline = common_crud.get_discipline(self.answer.discipline_id)
+        discipline = await common_crud.get_discipline(self.answer.discipline_id)
         test_path = Path.cwd().joinpath(
             discipline.path_to_test
         ).joinpath(str(self.answer.lab_number))

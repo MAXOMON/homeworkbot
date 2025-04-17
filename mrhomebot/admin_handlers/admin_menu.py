@@ -2,6 +2,7 @@
 This module contains all the necessary functionality 
 to display the administrator's admin menu in the Telegram bot chat.
 """
+import asyncio
 from enum import Enum, auto
 from telebot.types import KeyboardButton, ReplyKeyboardMarkup, Message
 from database.main_db import admin_crud
@@ -20,6 +21,7 @@ from mrhomebot.admin_handlers.upload_start_configuration \
     import _handle_upload_start_configuration
 from mrhomebot.admin_handlers.download_all_test_and_answer \
     import _handle_download_all_test_and_answer
+from mrhomebot.admin_handlers.reset_teacher_mode import handle_reset_with_admin
 from mrhomebot.teacher_handlers.teacher_menu import create_teacher_keyboard
 
 
@@ -55,6 +57,7 @@ class AdminCommand(Enum):
     DOWNLOAD_ANSWER = auto()
     DOWNLOAD_ALL_ANSWER_WITH_TEST = auto()
     SWITCH_TO_TEACHER = auto()
+    RESET = auto()
 
 
 __admin_commands = {
@@ -79,11 +82,12 @@ __admin_commands = {
     AdminCommand.DOWNLOAD_FULL_REPORT: "Полный отчёт",
     AdminCommand.DOWNLOAD_SHORT_REPORT: "Краткий отчёт",
     AdminCommand.DOWNLOAD_FINISH_REPORT: "Итоговый отчёт",
-    AdminCommand.SWITCH_TO_TEACHER: "\U0001F468\U0000200D\U0001F3EB"
+    AdminCommand.SWITCH_TO_TEACHER: "\U0001F468\U0000200D\U0001F3EB",
+    AdminCommand.RESET: "Сброс ошибки"
 }
 
 
-def first_admin_keyboard(message: Message) -> ReplyKeyboardMarkup:
+async def first_admin_keyboard(message: Message) -> ReplyKeyboardMarkup:
     """
     the first list of the admin menu, 
     which will be displayed to the administrator in the telegram bot chat.
@@ -108,14 +112,15 @@ def first_admin_keyboard(message: Message) -> ReplyKeyboardMarkup:
         KeyboardButton(__admin_commands[AdminCommand.SET_TEACHER_TO_GROUP])
     )
     footer_buttons = []
-    if admin_crud.is_teacher(message.from_user.id):
+    is_teacher = await admin_crud.is_teacher(message.from_user.id)
+    if is_teacher:
         footer_buttons.append(KeyboardButton(__admin_commands[AdminCommand.SWITCH_TO_TEACHER]))
     footer_buttons.append(KeyboardButton(__admin_commands[AdminCommand.NEXT]))
     markup.add(*footer_buttons)
     return markup
 
 
-def second_admin_keyboard(message: Message | None = None) -> ReplyKeyboardMarkup:
+async def second_admin_keyboard(message: Message | None = None) -> ReplyKeyboardMarkup:
     """
     the second list of the admin menu, 
     which will be displayed to the administrator in the telegram bot chat.
@@ -141,10 +146,11 @@ def second_admin_keyboard(message: Message | None = None) -> ReplyKeyboardMarkup
         KeyboardButton(__admin_commands[AdminCommand.BACK]),
         KeyboardButton(__admin_commands[AdminCommand.NEXT])
     )
+    await asyncio.sleep(0.0001)
     return markup
 
 
-def third_admin_keyboard(message: Message | None = None) -> ReplyKeyboardMarkup:
+async def third_admin_keyboard(message: Message | None = None) -> ReplyKeyboardMarkup:
     """
     the third list of the admin menu, 
     which will be displayed to the administrator in the telegram bot chat.
@@ -165,6 +171,7 @@ def third_admin_keyboard(message: Message | None = None) -> ReplyKeyboardMarkup:
     markup.add(
         KeyboardButton(__admin_commands[AdminCommand.BACK])
     )
+    await asyncio.sleep(0.0001)
     return markup
 
 def is_admin_command(command: str) -> bool:
@@ -206,12 +213,13 @@ async def switch_admin_to_teacher_menu(message: Message):
     :param message: the object containing information about
         an incoming message from the user.
     """
+    markup = await create_teacher_keyboard(message)
     await bot.send_message(
         message.chat.id,
         "Переключение в режим преподавателя",
         parse_mode='HTML',
         disable_web_page_preview=True,
-        reply_markup=create_teacher_keyboard(message)
+        reply_markup=markup
     )
 
 @bot.message_handler(is_admin=True,
@@ -245,10 +253,11 @@ async def handle_commands(message: Message):
             else:
                 __menu_index[message.from_user.id] += 1
             index = __menu_index[message.from_user.id]
+            markup = await __menu_list[index](message)
             await bot.send_message(
                 message.chat.id,
                 "Смена меню",
-                reply_markup=__menu_list[index](message)
+                reply_markup=markup
             )
         case AdminCommand.BACK:
             if message.from_user.id not in __menu_index:
@@ -256,10 +265,11 @@ async def handle_commands(message: Message):
             else:
                 __menu_index[message.from_user.id] -= 1
             index = __menu_index[message.from_user.id]
+            markup = await __menu_list[index](message)
             await bot.send_message(
                 message.chat.id,
                 "Смена меню",
-                reply_markup=__menu_list[index](message)
+                reply_markup=markup
             )
         case AdminCommand.SET_TEACHER_TO_GROUP:
             await create_teachers_button(message, "assignTeacherGR")
@@ -276,7 +286,7 @@ async def handle_commands(message: Message):
         case AdminCommand.UPLOAD_CONFIGURATION:
             await _handle_upload_start_configuration(message)
         case AdminCommand.SWITCH_TO_TEACHER:
-            admin_crud.switch_admin_mode_to_teacher(message.from_user.id)
+            await admin_crud.switch_admin_mode_to_teacher(message.from_user.id)
             await switch_admin_to_teacher_menu(message)
         case AdminCommand.DOWNLOAD_FULL_REPORT:
             await create_groups_button(message, "fullReport")
@@ -288,3 +298,5 @@ async def handle_commands(message: Message):
             await create_groups_button(message, "shortReport")
         case AdminCommand.DOWNLOAD_ALL_ANSWER_WITH_TEST:
             await _handle_download_all_test_and_answer(message)
+        case AdminCommand.RESET:
+            await handle_reset_with_admin(message)

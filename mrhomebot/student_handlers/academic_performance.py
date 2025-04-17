@@ -36,7 +36,7 @@ async def callback_academic_performance(call: CallbackQuery):
     match type_callback:
         case "academicPerf":
             discipline_id = int(call.data.split("_")[1])
-            student = student_crud.get_student_by_tg_id(call.from_user.id)
+            student = await student_crud.get_student_by_tg_id(call.from_user.id)
             await __create_report(call, student.id, discipline_id)
         case _:
             await bot.edit_message_text(
@@ -63,7 +63,7 @@ async def __create_report(call: CallbackQuery,
         call.message.id
     )
     report = await asyncio.gather(
-        asyncio.to_thread(run_interactive_report_builder,
+        await asyncio.to_thread(run_interactive_report_builder,
                           student_id,
                           discipline_id)
     )

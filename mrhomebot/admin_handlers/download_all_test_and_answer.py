@@ -1,5 +1,4 @@
 """Contains the necessary functionality to download all tests and answers"""
-import asyncio
 import os
 import shutil
 import pathlib
@@ -42,16 +41,14 @@ async def _handle_download_all_test_and_answer(message: Message):
         message.chat.id,
         "Начинаем формировать отчёт"
     )
-    path_to_archive = await asyncio.gather(
-        asyncio.to_thread(create_archive_all_data)
-    )
+    path_to_archive = create_archive_all_data()
     await bot.send_message(
         message.chat.id,
         "Архив успешно сформирован"
     )
     await bot.send_document(
         message.chat.id,
-        InputFile(path_to_archive[0])
+        InputFile(path_to_archive)
     )
 
 def create_archive_all_data():
