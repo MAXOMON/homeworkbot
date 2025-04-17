@@ -36,7 +36,9 @@ async def __handle_reset(message: Message):
     :param message: the object containing information about
         an incoming message from the user.
     """
+    from mrhomebot.admin_handlers.admin_menu import __menu_index
     await teacher_crud.switch_teacher_mode_to_admin(message.from_user.id)
+    __menu_index[message.from_user.id] = 0
     await bot.send_message(
         message.chat.id,
         "Teacher-mode is off"

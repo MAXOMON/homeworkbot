@@ -21,7 +21,7 @@ from mrhomebot.admin_handlers.upload_start_configuration \
     import _handle_upload_start_configuration
 from mrhomebot.admin_handlers.download_all_test_and_answer \
     import _handle_download_all_test_and_answer
-from mrhomebot.admin_handlers.reset_teacher_mode import handle_reset_with_admin
+from mrhomebot.admin_handlers.reset_teacher_mode import __handle_reset
 from mrhomebot.teacher_handlers.teacher_menu import create_teacher_keyboard
 
 
@@ -299,4 +299,4 @@ async def handle_commands(message: Message):
         case AdminCommand.DOWNLOAD_ALL_ANSWER_WITH_TEST:
             await _handle_download_all_test_and_answer(message)
         case AdminCommand.RESET:
-            await handle_reset_with_admin(message)
+            await __handle_reset(message)
