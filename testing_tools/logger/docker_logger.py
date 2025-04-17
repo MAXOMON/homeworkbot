@@ -6,7 +6,8 @@ will be launched.
 import json
 import os
 from threading import Lock
-from pydantic.json import pydantic_encoder
+#from pydantic.json import pydantic_encoder
+from pydantic_core import to_jsonable_python
 from .report_model import LabReport, TestLogInit, TaskReport
 
 
@@ -123,7 +124,8 @@ class DockerLogger(metaclass=_SingletonBaseClass):
                 indent=4,
                 ensure_ascii=False,
                 separators=(',', ': '),
-                default=pydantic_encoder
+                default=to_jsonable_python
+                #default=pydantic_encoder
             )
 
     def to_json(self) -> str:
@@ -139,5 +141,6 @@ class DockerLogger(metaclass=_SingletonBaseClass):
                 indent=4,
                 ensure_ascii=False,
                 separators=(',', ': '),
-                default=pydantic_encoder
+                default=to_jsonable_python
+                #default=pydantic_encoder
             )

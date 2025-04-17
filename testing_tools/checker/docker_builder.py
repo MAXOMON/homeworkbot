@@ -6,9 +6,11 @@ import json
 import time
 import uuid
 from pathlib import Path
-from python_on_whales import docker
+from python_on_whales import DockerClient
 from model.pydantic.test_settings import TestSettings
 
+
+docker = DockerClient(log_level='info')
 
 class DockerBuilder:
     """Dockerfile generation class"""
@@ -34,6 +36,9 @@ class DockerBuilder:
         """Generate, fill with the necessary content and save the Dockerfile"""
         file = [
             "FROM python:3.11\n",
+            "ENV PIP_ROOT_USER_ACTION=ignore\n",
+            "ENV PYTHONDONTWRITEBYTECODE=1\n",
+            "ENV PYTHONUNBUFFERED=1\n",
             "WORKDIR /opt/\n"
             "COPY . /opt \n",
         ]
@@ -63,9 +68,10 @@ class DockerBuilder:
         and get the result of the work done (logs) and save it.
         """
         self._build_docker_file()
-
+        
         with docker.build(context_path=self.test_dir,
                           tags=self.tag_name) as my_image:
+            with docker.container.run(self.tag_name,
             with docker.container.run(self.tag_name,
                             name=self.tag_name,
                             detach=True) as output:

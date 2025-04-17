@@ -15,6 +15,8 @@ from mrhomebot.middlewares import BanMiddleware, StudentFloodMiddleware
 load_dotenv()
 
 
+
+
 bot = AsyncTeleBot(os.getenv("BOT_TOKEN"), state_storage=StateMemoryStorage())
 
 bot.add_custom_filter(asyncio_filters.StateFilter(bot))

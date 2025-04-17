@@ -92,6 +92,6 @@ class AnswerProcessing:
             await self.bot.send_message(
                 record.chat_id,
                 text=text,
-                parse_mode='HTML'
+                parse_mode='HTML',
             )
             await queue_out_crud.delete_record(record.id)
